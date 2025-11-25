@@ -103,11 +103,11 @@ class CMS_Meta_Boxes {
 			'high'
 		);
 
-		// Comments meta box.
+		// Brief Messages
 		add_meta_box(
-			'cms_brief_comments',
-			__( 'Brief Comments & Feedback', 'campaign-mgmt' ),
-			array( $this, 'render_comments_meta_box' ),
+			'cms_brief_messages',
+			__( 'Messages & Feedback', 'campaign-mgmt' ),
+			array( $this, 'render_messages_meta_box' ),
 			'campaign_brief',
 			'normal',
 			'default'
@@ -528,58 +528,65 @@ class CMS_Meta_Boxes {
 	}
 
 	/**
-	 * Render comments meta box
+	 * Render messages meta box
 	 *
 	 * @param WP_Post $post Current post object.
 	 */
-	public function render_comments_meta_box( $post ) {
-		$comments = get_comments( array(
-			'post_id' => $post->ID,
-			'status'  => 'approve',
-			'orderby' => 'comment_date',
-			'order'   => 'DESC',
-		));
+	public function render_messages_meta_box( $post ) {
+		$messages_handler = new CMS_Messages();
+		$messages = $messages_handler->get_messages_for_brief( $post->ID, true );
+		$unread_count = $messages_handler->get_unread_count( $post->ID );
 
-		if ( empty( $comments ) ) {
-			echo '<p>' . esc_html__( 'No comments yet.', 'campaign-mgmt' ) . '</p>';
-			echo '<p><a href="' . esc_url( get_permalink( $post->ID ) . '#comments' ) . '" target="_blank" class="button button-secondary">' . esc_html__( 'View Brief & Add Comment', 'campaign-mgmt' ) . '</a></p>';
-			return;
+		// Mark as read when viewing in admin
+		if ( $unread_count > 0 ) {
+			$messages_handler->mark_brief_messages_read( $post->ID );
 		}
+		?>
+		<div class="cms-messages-metabox">
+			<?php if ( empty( $messages ) ) : ?>
+				<p style="color: #666; font-style: italic;">
+					<?php esc_html_e( 'No messages yet.', 'campaign-mgmt' ); ?>
+				</p>
+			<?php else : ?>
+				<p>
+					<strong><?php printf( _n( '%d Message', '%d Messages', count( $messages ), 'campaign-mgmt' ), count( $messages ) ); ?></strong>
+					<?php if ( $unread_count > 0 ) : ?>
+						<span style="background: #ffc107; color: #000; padding: 2px 8px; border-radius: 3px; font-size: 11px; margin-left: 10px;">
+							<?php printf( _n( '%d new', '%d new', $unread_count, 'campaign-mgmt' ), $unread_count ); ?>
+						</span>
+					<?php endif; ?>
+				</p>
 
-		echo '<div class="cms-admin-comments">';
-		echo '<p><strong>' . sprintf( _n( '%s Comment', '%s Comments', count( $comments ), 'campaign-mgmt' ), count( $comments ) ) . '</strong></p>';
+				<div style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;">
+					<?php foreach ( $messages as $msg ) : ?>
+						<div style="padding: 15px; border-bottom: 1px solid #e5e5e5; background: #fff;">
+							<div style="margin-bottom: 8px;">
+								<strong style="color: #333;"><?php echo esc_html( $msg->author_name ); ?></strong>
+								<span style="color: #666; margin-left: 8px;"><?php echo esc_html( $msg->author_email ); ?></span>
+								<span style="color: #999; float: right; font-size: 12px;">
+									<?php echo esc_html( date( 'M j, Y g:i a', strtotime( $msg->created_at ) ) ); ?>
+								</span>
+							</div>
+							<div style="color: #444; line-height: 1.5;">
+								<?php echo wp_kses_post( wpautop( esc_html( $msg->message ) ) ); ?>
+							</div>
+							<?php if ( $msg->is_internal ) : ?>
+								<span style="background: #e0e0e0; color: #666; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-top: 8px; display: inline-block;">
+									<?php esc_html_e( 'Internal Note', 'campaign-mgmt' ); ?>
+								</span>
+							<?php endif; ?>
+						</div>
+					<?php endforeach; ?>
+				</div>
+			<?php endif; ?>
 
-		foreach ( $comments as $comment ) {
-			?>
-			<div class="cms-admin-comment" style="background: #f9f9f9; padding: 15px; margin-bottom: 15px; border-left: 4px solid #0073aa;">
-				<div class="comment-meta" style="margin-bottom: 10px;">
-					<strong><?php echo esc_html( $comment->comment_author ); ?></strong>
-					<span style="color: #666; margin-left: 10px;">
-						(<?php echo esc_html( $comment->comment_author_email ); ?>)
-					</span>
-					<br>
-					<small style="color: #999;">
-						<?php echo esc_html( human_time_diff( strtotime( $comment->comment_date ), current_time( 'timestamp' ) ) . ' ago' ); ?>
-						(<?php echo esc_html( date( 'F j, Y \a\t g:i a', strtotime( $comment->comment_date ) ) ); ?>)
-					</small>
-				</div>
-				<div class="comment-content">
-					<?php echo wp_kses_post( wpautop( $comment->comment_content ) ); ?>
-				</div>
-				<div class="comment-actions" style="margin-top: 10px;">
-					<a href="<?php echo esc_url( admin_url( 'comment.php?action=editcomment&c=' . $comment->comment_ID ) ); ?>" class="button button-small">
-						<?php esc_html_e( 'Edit', 'campaign-mgmt' ); ?>
-					</a>
-					<a href="<?php echo esc_url( get_permalink( $post->ID ) . '#comment-' . $comment->comment_ID ); ?>" class="button button-small" target="_blank">
-						<?php esc_html_e( 'View on Brief', 'campaign-mgmt' ); ?>
-					</a>
-				</div>
-			</div>
-			<?php
-		}
-
-		echo '<p><a href="' . esc_url( get_permalink( $post->ID ) . '#comments' ) . '" target="_blank" class="button button-primary">' . esc_html__( 'View All Comments on Brief', 'campaign-mgmt' ) . '</a></p>';
-		echo '</div>';
+			<p style="margin-top: 15px;">
+				<a href="<?php echo esc_url( get_permalink( $post->ID ) ); ?>" class="button button-secondary" target="_blank">
+					<?php esc_html_e( 'View Brief & Reply', 'campaign-mgmt' ); ?>
+				</a>
+			</p>
+		</div>
+		<?php
 	}
 
 	/**

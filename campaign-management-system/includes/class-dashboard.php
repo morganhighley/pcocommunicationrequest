@@ -65,41 +65,21 @@ class CMS_Dashboard {
 		$blue_count = $this->get_count_by_service_level( 'Blue' );
 		$black_count = $this->get_count_by_service_level( 'Black' );
 
-		// Get recent comments on campaign briefs.
-		$recent_comments = $this->get_recent_comments( 10 );
+		// Get recent messages on campaign briefs.
+		$recent_messages = $this->get_recent_messages( 10 );
 
 		include CMS_PLUGIN_DIR . 'templates/dashboard.php';
 	}
 
 	/**
-	 * Get recent comments on campaign briefs
+	 * Get recent messages on campaign briefs
 	 *
-	 * @param int $limit Number of comments to retrieve.
-	 * @return array Array of comment objects.
+	 * @param int $limit Number of messages to retrieve.
+	 * @return array Array of message objects.
 	 */
-	private function get_recent_comments( $limit = 10 ) {
-		// First, get all campaign_brief post IDs
-		$brief_ids = get_posts( array(
-			'post_type'      => 'campaign_brief',
-			'posts_per_page' => -1,
-			'fields'         => 'ids',
-			'post_status'    => array( 'publish', 'draft', 'private' ),
-		));
-
-		if ( empty( $brief_ids ) ) {
-			return array();
-		}
-
-		// Then get comments for those posts
-		$comments = get_comments( array(
-			'post__in'  => $brief_ids,
-			'status'    => 'approve',
-			'number'    => $limit,
-			'orderby'   => 'comment_date',
-			'order'     => 'DESC',
-		));
-
-		return $comments;
+	private function get_recent_messages( $limit = 10 ) {
+		$messages_handler = new CMS_Messages();
+		return $messages_handler->get_recent_messages( $limit );
 	}
 
 	/**

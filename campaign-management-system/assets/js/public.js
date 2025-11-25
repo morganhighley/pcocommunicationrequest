@@ -1,5 +1,6 @@
 /**
- * Public JavaScript for Campaign Briefs
+ * Campaign Brief Public JavaScript
+ * Includes JS-rendered chat system with inline styles
  *
  * @package CampaignManagementSystem
  */
@@ -17,44 +18,36 @@
         var btn = $('#cms-accept-brief-btn');
         var closeButtons = $('.cms-modal-close');
 
-        // Open modal
         btn.on('click', function() {
             modal.fadeIn();
         });
 
-        // Close modal
         closeButtons.on('click', function() {
             modal.fadeOut();
         });
 
-        // Close modal when clicking outside
         $(window).on('click', function(event) {
             if (event.target == modal[0]) {
                 modal.fadeOut();
             }
         });
 
-        // Handle accept form submission
         $('#cms-accept-form').on('submit', function(e) {
             e.preventDefault();
-
             var $form = $(this);
             var $submitBtn = $form.find('button[type="submit"]');
             var originalText = $submitBtn.text();
 
-            // Disable submit button
             $submitBtn.prop('disabled', true).text('Accepting...');
 
-            // Get form data
             var formData = {
                 action: 'cms_accept_brief',
                 nonce: cmsPublic.nonce,
-                post_id: getPostId(),
+                post_id: cmsPublic.briefId,
                 acceptor_name: $('#acceptor_name').val(),
                 acceptor_email: $('#acceptor_email').val()
             };
 
-            // Submit via AJAX
             $.post(cmsPublic.ajaxUrl, formData)
                 .done(function(response) {
                     if (response.success) {
@@ -72,204 +65,463 @@
         });
 
         // ============================================
-        // CHAT/COMMENT SYSTEM
+        // CHAT SYSTEM - JS RENDERED WITH INLINE STYLES
         // ============================================
 
-        var $chatForm = $('#cms-chat-form');
-        var $chatMessages = $('#cms-chat-messages');
-        var $chatResponse = $('#cms-chat-response');
-        var $submitBtn = $('#cms-chat-submit');
+        var ChatSystem = {
+            container: null,
+            messages: [],
 
-        // Scroll to bottom of chat on load
-        if ($chatMessages.length) {
-            scrollToBottom();
-        }
+            // All styles defined here - completely independent of theme
+            styles: {
+                wrapper: [
+                    'font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                    'background: #ffffff',
+                    'border-radius: 12px',
+                    'box-shadow: 0 2px 12px rgba(0,0,0,0.1)',
+                    'overflow: hidden',
+                    'margin-top: 30px'
+                ].join(';'),
 
-        // Handle chat form submission
-        $chatForm.on('submit', function(e) {
-            e.preventDefault();
+                header: [
+                    'background: linear-gradient(135deg, #0073aa 0%, #005a87 100%)',
+                    'color: #ffffff',
+                    'padding: 20px 24px'
+                ].join(';'),
 
-            var originalBtnHtml = $submitBtn.html();
-            var authorName = $('#cms_chat_author').val().trim();
-            var authorEmail = $('#cms_chat_email').val().trim();
-            var messageContent = $('#cms_chat_content').val().trim();
+                headerTitle: [
+                    'margin: 0 0 6px 0',
+                    'font-size: 20px',
+                    'font-weight: 600',
+                    'display: flex',
+                    'align-items: center',
+                    'gap: 10px'
+                ].join(';'),
 
-            // Validate
-            if (!authorName || !authorEmail || !messageContent) {
-                showResponse('error', 'Please fill in all fields.');
-                return;
-            }
+                headerSubtitle: [
+                    'margin: 0',
+                    'font-size: 14px',
+                    'opacity: 0.9'
+                ].join(';'),
 
-            // Disable submit button
-            $submitBtn.prop('disabled', true).html('<span class="cms-chat-send-icon">⏳</span> <span class="cms-chat-send-text">Sending...</span>');
+                badge: [
+                    'background: rgba(255,255,255,0.2)',
+                    'padding: 2px 10px',
+                    'border-radius: 12px',
+                    'font-size: 14px'
+                ].join(';'),
 
-            // Get nonce from form
-            var nonce = $chatForm.find('input[name="cms_comment_nonce"]').val();
-            var postId = $chatForm.find('input[name="comment_post_ID"]').val();
+                messagesContainer: [
+                    'max-height: 450px',
+                    'overflow-y: auto',
+                    'padding: 24px',
+                    'background: #f8f9fa',
+                    'min-height: 120px'
+                ].join(';'),
 
-            // Prepare form data
-            var formData = {
-                action: 'cms_submit_comment',
-                nonce: nonce,
-                comment_post_ID: postId,
-                author: authorName,
-                email: authorEmail,
-                comment: messageContent
-            };
+                emptyState: [
+                    'text-align: center',
+                    'padding: 40px 20px',
+                    'color: #6c757d'
+                ].join(';'),
 
-            // Submit via AJAX
-            $.post(cmsPublic.ajaxUrl, formData)
-                .done(function(response) {
-                    if (response.success) {
-                        // Clear the message field only (keep name/email for convenience)
-                        $('#cms_chat_content').val('');
+                emptyIcon: [
+                    'font-size: 48px',
+                    'margin-bottom: 12px',
+                    'opacity: 0.5'
+                ].join(';'),
 
-                        // Show success message briefly
-                        showResponse('success', '✓ Message sent!');
+                message: [
+                    'display: flex',
+                    'gap: 12px',
+                    'margin-bottom: 20px'
+                ].join(';'),
 
-                        // Add the new message to the chat
-                        addMessageToChat(authorName, authorEmail, messageContent);
+                avatar: [
+                    'width: 40px',
+                    'height: 40px',
+                    'border-radius: 50%',
+                    'background: #dee2e6',
+                    'display: flex',
+                    'align-items: center',
+                    'justify-content: center',
+                    'font-weight: 600',
+                    'color: #495057',
+                    'font-size: 16px',
+                    'flex-shrink: 0'
+                ].join(';'),
 
-                        // Hide response after 3 seconds
-                        setTimeout(function() {
-                            $chatResponse.fadeOut();
-                        }, 3000);
+                bubble: [
+                    'flex: 1',
+                    'background: #ffffff',
+                    'border-radius: 12px',
+                    'padding: 12px 16px',
+                    'box-shadow: 0 1px 3px rgba(0,0,0,0.08)'
+                ].join(';'),
 
-                        // Update message count in header
-                        updateMessageCount();
+                meta: [
+                    'display: flex',
+                    'align-items: center',
+                    'gap: 10px',
+                    'margin-bottom: 6px',
+                    'flex-wrap: wrap'
+                ].join(';'),
 
-                    } else {
-                        showResponse('error', 'Error: ' + response.data.message);
-                    }
-                })
-                .fail(function(xhr, status, error) {
-                    console.error('Chat submit error:', status, error);
-                    showResponse('error', 'An error occurred. Please try again.');
-                })
-                .always(function() {
-                    $submitBtn.prop('disabled', false).html(originalBtnHtml);
+                authorName: [
+                    'font-weight: 600',
+                    'color: #333',
+                    'font-size: 14px'
+                ].join(';'),
+
+                time: [
+                    'font-size: 12px',
+                    'color: #6c757d'
+                ].join(';'),
+
+                content: [
+                    'color: #495057',
+                    'font-size: 15px',
+                    'line-height: 1.5'
+                ].join(';'),
+
+                inputWrapper: [
+                    'padding: 20px 24px',
+                    'background: #ffffff',
+                    'border-top: 1px solid #e9ecef'
+                ].join(';'),
+
+                inputRow: [
+                    'display: flex',
+                    'gap: 12px',
+                    'margin-bottom: 12px',
+                    'flex-wrap: wrap'
+                ].join(';'),
+
+                inputField: [
+                    'flex: 1',
+                    'min-width: 200px'
+                ].join(';'),
+
+                input: [
+                    'width: 100%',
+                    'padding: 12px 16px',
+                    'border: 2px solid #e9ecef',
+                    'border-radius: 8px',
+                    'font-size: 15px',
+                    'font-family: inherit',
+                    'box-sizing: border-box',
+                    'transition: border-color 0.2s'
+                ].join(';'),
+
+                textarea: [
+                    'width: 100%',
+                    'padding: 12px 16px',
+                    'border: 2px solid #e9ecef',
+                    'border-radius: 8px',
+                    'font-size: 15px',
+                    'font-family: inherit',
+                    'box-sizing: border-box',
+                    'min-height: 80px',
+                    'resize: vertical',
+                    'transition: border-color 0.2s'
+                ].join(';'),
+
+                messageRow: [
+                    'display: flex',
+                    'gap: 12px',
+                    'align-items: flex-end'
+                ].join(';'),
+
+                sendBtn: [
+                    'padding: 12px 28px',
+                    'background: linear-gradient(135deg, #0073aa 0%, #005a87 100%)',
+                    'color: #ffffff',
+                    'border: none',
+                    'border-radius: 8px',
+                    'font-size: 15px',
+                    'font-weight: 600',
+                    'cursor: pointer',
+                    'transition: transform 0.2s, box-shadow 0.2s',
+                    'white-space: nowrap'
+                ].join(';'),
+
+                sendBtnHover: [
+                    'transform: translateY(-1px)',
+                    'box-shadow: 0 4px 12px rgba(0,115,170,0.3)'
+                ].join(';'),
+
+                sendBtnDisabled: [
+                    'opacity: 0.6',
+                    'cursor: not-allowed'
+                ].join(';'),
+
+                privacy: [
+                    'margin: 12px 0 0 0',
+                    'font-size: 12px',
+                    'color: #6c757d'
+                ].join(';'),
+
+                response: [
+                    'padding: 12px 16px',
+                    'border-radius: 6px',
+                    'margin-bottom: 12px',
+                    'display: none'
+                ].join(';'),
+
+                responseSuccess: [
+                    'background: #d4edda',
+                    'color: #155724'
+                ].join(';'),
+
+                responseError: [
+                    'background: #f8d7da',
+                    'color: #721c24'
+                ].join(';')
+            },
+
+            init: function() {
+                this.container = $('#cms-chat-container');
+                if (!this.container.length) return;
+
+                this.messages = cmsPublic.messages || [];
+                this.render();
+                this.bindEvents();
+            },
+
+            render: function() {
+                var self = this;
+                var messageCount = this.messages.length;
+
+                var html = '<div id="cms-chat-wrapper" style="' + this.styles.wrapper + '">';
+
+                // Header
+                html += '<div style="' + this.styles.header + '">';
+                html += '<h3 style="' + this.styles.headerTitle + '">';
+                html += '<span>💬</span> Feedback & Discussion';
+                if (messageCount > 0) {
+                    html += '<span style="' + this.styles.badge + '">' + messageCount + '</span>';
+                }
+                html += '</h3>';
+                html += '<p style="' + this.styles.headerSubtitle + '">Discuss this campaign brief with the communications team.</p>';
+                html += '</div>';
+
+                // Messages
+                html += '<div id="cms-chat-messages" style="' + this.styles.messagesContainer + '">';
+                if (messageCount === 0) {
+                    html += '<div id="cms-empty-state" style="' + this.styles.emptyState + '">';
+                    html += '<div style="' + this.styles.emptyIcon + '">💭</div>';
+                    html += '<p style="margin:0">No messages yet. Start the conversation!</p>';
+                    html += '</div>';
+                } else {
+                    this.messages.forEach(function(msg) {
+                        html += self.renderMessage(msg);
+                    });
+                }
+                html += '</div>';
+
+                // Response area
+                html += '<div id="cms-chat-response" style="' + this.styles.response + '"></div>';
+
+                // Input form
+                html += '<div style="' + this.styles.inputWrapper + '">';
+                html += '<form id="cms-chat-form">';
+
+                // Name and email row
+                html += '<div style="' + this.styles.inputRow + '">';
+                html += '<div style="' + this.styles.inputField + '">';
+                html += '<input type="text" id="cms-msg-name" placeholder="Your Name *" required style="' + this.styles.input + '">';
+                html += '</div>';
+                html += '<div style="' + this.styles.inputField + '">';
+                html += '<input type="email" id="cms-msg-email" placeholder="Your Email *" required style="' + this.styles.input + '">';
+                html += '</div>';
+                html += '</div>';
+
+                // Message row
+                html += '<div style="' + this.styles.messageRow + '">';
+                html += '<div style="flex:1">';
+                html += '<textarea id="cms-msg-content" placeholder="Type your message..." required style="' + this.styles.textarea + '"></textarea>';
+                html += '</div>';
+                html += '<button type="submit" id="cms-send-btn" style="' + this.styles.sendBtn + '">Send ➤</button>';
+                html += '</div>';
+
+                html += '</form>';
+                html += '<p style="' + this.styles.privacy + '">Your email will not be published. Messages are visible to the communications team.</p>';
+                html += '</div>';
+
+                html += '</div>';
+
+                this.container.html(html);
+                this.scrollToBottom();
+            },
+
+            renderMessage: function(msg) {
+                var initial = msg.author_name.charAt(0).toUpperCase();
+
+                var html = '<div class="cms-chat-msg" style="' + this.styles.message + '">';
+                html += '<div style="' + this.styles.avatar + '">' + initial + '</div>';
+                html += '<div style="' + this.styles.bubble + '">';
+                html += '<div style="' + this.styles.meta + '">';
+                html += '<span style="' + this.styles.authorName + '">' + msg.author_name + '</span>';
+                html += '<span style="' + this.styles.time + '">' + msg.time_ago + '</span>';
+                html += '</div>';
+                html += '<div style="' + this.styles.content + '">' + msg.message + '</div>';
+                html += '</div>';
+                html += '</div>';
+
+                return html;
+            },
+
+            bindEvents: function() {
+                var self = this;
+
+                // Form submission
+                $(document).on('submit', '#cms-chat-form', function(e) {
+                    e.preventDefault();
+                    self.submitMessage();
                 });
-        });
 
-        /**
-         * Show response message
-         */
-        function showResponse(type, message) {
-            $chatResponse
-                .removeClass('success error')
-                .addClass(type)
-                .html(message)
-                .fadeIn();
-        }
+                // Input focus styling
+                $(document).on('focus', '#cms-chat-form input, #cms-chat-form textarea', function() {
+                    $(this).css('border-color', '#0073aa');
+                    $(this).css('box-shadow', '0 0 0 3px rgba(0,115,170,0.15)');
+                });
 
-        /**
-         * Add a new message to the chat without reloading
-         */
-        function addMessageToChat(name, email, content) {
-            // Remove empty state if present
-            $('.cms-chat-empty').remove();
+                $(document).on('blur', '#cms-chat-form input, #cms-chat-form textarea', function() {
+                    $(this).css('border-color', '#e9ecef');
+                    $(this).css('box-shadow', 'none');
+                });
 
-            // Create avatar URL using Gravatar
-            var emailHash = md5(email.toLowerCase().trim());
-            var avatarUrl = 'https://www.gravatar.com/avatar/' + emailHash + '?s=40&d=mp';
-
-            // Format the message content (convert newlines to paragraphs)
-            var formattedContent = '<p>' + escapeHtml(content).replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>') + '</p>';
-
-            var messageHtml =
-                '<div class="cms-chat-message new-message">' +
-                    '<div class="cms-chat-avatar">' +
-                        '<img src="' + avatarUrl + '" alt="" width="40" height="40" />' +
-                    '</div>' +
-                    '<div class="cms-chat-bubble">' +
-                        '<div class="cms-chat-meta">' +
-                            '<span class="cms-chat-author">' + escapeHtml(name) + '</span>' +
-                            '<span class="cms-chat-time">Just now</span>' +
-                        '</div>' +
-                        '<div class="cms-chat-content">' + formattedContent + '</div>' +
-                    '</div>' +
-                '</div>';
-
-            $chatMessages.append(messageHtml);
-            scrollToBottom();
-        }
-
-        /**
-         * Scroll chat to bottom
-         */
-        function scrollToBottom() {
-            if ($chatMessages.length) {
-                $chatMessages.animate({
-                    scrollTop: $chatMessages[0].scrollHeight
-                }, 300);
-            }
-        }
-
-        /**
-         * Update message count in header
-         */
-        function updateMessageCount() {
-            var $count = $('.cms-chat-count');
-            if ($count.length) {
-                var currentCount = parseInt($count.text()) || 0;
-                $count.text(currentCount + 1);
-            } else {
-                // Add count badge if it doesn't exist
-                $('.cms-chat-title').append('<span class="cms-chat-count">1</span>');
-            }
-        }
-
-        /**
-         * Simple HTML escaping
-         */
-        function escapeHtml(text) {
-            var div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        /**
-         * Simple MD5 hash for Gravatar (using a minimal implementation)
-         */
-        function md5(string) {
-            // Simple hash function - for Gravatar only
-            // Using a basic implementation since we just need consistent hashing
-            var hash = 0;
-            if (string.length === 0) return hash.toString(16);
-            for (var i = 0; i < string.length; i++) {
-                var char = string.charCodeAt(i);
-                hash = ((hash << 5) - hash) + char;
-                hash = hash & hash;
-            }
-            // Return a 32-char hex string (Gravatar will handle invalid hashes gracefully)
-            return Math.abs(hash).toString(16).padStart(32, '0');
-        }
-
-        /**
-         * Get current post ID
-         */
-        function getPostId() {
-            var urlParams = new URLSearchParams(window.location.search);
-            var postId = urlParams.get('post');
-
-            if (!postId) {
-                var bodyClasses = $('body').attr('class');
-                if (bodyClasses) {
-                    var classes = bodyClasses.split(' ');
-                    for (var i = 0; i < classes.length; i++) {
-                        if (classes[i].indexOf('postid-') === 0) {
-                            postId = classes[i].replace('postid-', '');
-                            break;
-                        }
+                // Send button hover
+                $(document).on('mouseenter', '#cms-send-btn', function() {
+                    if (!$(this).prop('disabled')) {
+                        $(this).css('transform', 'translateY(-1px)');
+                        $(this).css('box-shadow', '0 4px 12px rgba(0,115,170,0.3)');
                     }
+                });
+
+                $(document).on('mouseleave', '#cms-send-btn', function() {
+                    $(this).css('transform', 'none');
+                    $(this).css('box-shadow', 'none');
+                });
+            },
+
+            submitMessage: function() {
+                var self = this;
+                var $btn = $('#cms-send-btn');
+                var $response = $('#cms-chat-response');
+
+                var name = $('#cms-msg-name').val().trim();
+                var email = $('#cms-msg-email').val().trim();
+                var message = $('#cms-msg-content').val().trim();
+
+                if (!name || !email || !message) {
+                    this.showResponse('error', 'Please fill in all fields.');
+                    return;
+                }
+
+                // Disable button
+                $btn.prop('disabled', true).text('Sending...');
+                $btn.css('opacity', '0.6').css('cursor', 'not-allowed');
+
+                $.ajax({
+                    url: cmsPublic.ajaxUrl,
+                    type: 'POST',
+                    data: {
+                        action: 'cms_post_message',
+                        nonce: cmsPublic.messagesNonce,
+                        brief_id: cmsPublic.briefId,
+                        author_name: name,
+                        author_email: email,
+                        message: message
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            // Add message to display
+                            self.addMessage(response.data.data);
+
+                            // Clear message field only
+                            $('#cms-msg-content').val('');
+
+                            // Show success
+                            self.showResponse('success', '✓ Message sent!');
+
+                            // Update count
+                            self.updateCount();
+
+                            // Hide response after delay
+                            setTimeout(function() {
+                                $response.fadeOut();
+                            }, 3000);
+                        } else {
+                            self.showResponse('error', response.data.message || 'Failed to send message.');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Message send error:', status, error);
+                        self.showResponse('error', 'An error occurred. Please try again.');
+                    },
+                    complete: function() {
+                        $btn.prop('disabled', false).text('Send ➤');
+                        $btn.css('opacity', '1').css('cursor', 'pointer');
+                    }
+                });
+            },
+
+            addMessage: function(msg) {
+                // Remove empty state if present
+                $('#cms-empty-state').remove();
+
+                // Add message
+                var html = this.renderMessage(msg);
+                $('#cms-chat-messages').append(html);
+
+                // Scroll to bottom
+                this.scrollToBottom();
+
+                // Add to array
+                this.messages.push(msg);
+            },
+
+            showResponse: function(type, message) {
+                var $response = $('#cms-chat-response');
+                var bgColor = type === 'success' ? '#d4edda' : '#f8d7da';
+                var textColor = type === 'success' ? '#155724' : '#721c24';
+
+                $response.css({
+                    'background': bgColor,
+                    'color': textColor,
+                    'display': 'block',
+                    'padding': '12px 24px',
+                    'margin': '0'
+                }).text(message);
+            },
+
+            updateCount: function() {
+                var $badge = $('#cms-chat-wrapper').find('h3 span:last');
+                var count = this.messages.length;
+
+                if ($badge.length && $badge.text().match(/^\d+$/)) {
+                    $badge.text(count);
+                } else {
+                    $('#cms-chat-wrapper h3').append('<span style="' + this.styles.badge + '">' + count + '</span>');
+                }
+            },
+
+            scrollToBottom: function() {
+                var $container = $('#cms-chat-messages');
+                if ($container.length) {
+                    $container.scrollTop($container[0].scrollHeight);
                 }
             }
+        };
 
-            return postId;
+        // Initialize chat system
+        if (typeof cmsPublic !== 'undefined' && cmsPublic.briefId) {
+            ChatSystem.init();
         }
 
         // ============================================
-        // COPY SHAREABLE LINK
+        // COPY LINK FUNCTIONALITY
         // ============================================
 
         $('#cms-copy-link').on('click', function() {
@@ -284,17 +536,6 @@
             setTimeout(function() {
                 $btn.text(originalText);
             }, 2000);
-        });
-
-        // ============================================
-        // SMOOTH SCROLL TO CHAT
-        // ============================================
-
-        $('a[href="#cms-chat"]').on('click', function(e) {
-            e.preventDefault();
-            $('html, body').animate({
-                scrollTop: $('#cms-chat').offset().top - 100
-            }, 500);
         });
 
     });

@@ -334,15 +334,16 @@ while ( have_posts() ) :
 			<div class="cms-page-number">5</div>
 		</div>
 
-		<!-- CHAT SECTION (no-print) -->
+		<!-- MESSAGES SECTION (no-print) -->
 		<div class="cms-comments-section no-print">
-			<?php
-			// Use custom chat template
-			$custom_chat = CMS_PLUGIN_DIR . 'templates/comments.php';
-			if ( file_exists( $custom_chat ) ) {
-				include $custom_chat;
-			}
-			?>
+			<div id="cms-chat-container">
+				<!-- Chat UI is rendered by JavaScript -->
+				<noscript>
+					<p style="padding: 20px; background: #f8f9fa; text-align: center;">
+						<?php esc_html_e( 'JavaScript is required to view and post messages.', 'campaign-mgmt' ); ?>
+					</p>
+				</noscript>
+			</div>
 		</div>
 
 	</div>
