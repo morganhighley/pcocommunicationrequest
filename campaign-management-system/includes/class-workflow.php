@@ -22,6 +22,9 @@ class CMS_Workflow {
 		add_action( 'wp_ajax_cms_accept_brief', array( $this, 'accept_brief' ) );
 		add_action( 'wp_ajax_nopriv_cms_accept_brief', array( $this, 'accept_brief' ) );
 		add_action( 'wp_ajax_cms_unlock_brief', array( $this, 'unlock_brief' ) );
+		add_action( 'wp_ajax_cms_unaccept_brief', array( $this, 'unaccept_brief' ) );
+		add_action( 'wp_ajax_cms_submit_comment', array( $this, 'submit_comment' ) );
+		add_action( 'wp_ajax_nopriv_cms_submit_comment', array( $this, 'submit_comment' ) );
 		add_action( 'admin_footer-post.php', array( $this, 'add_quick_status_change' ) );
 		add_action( 'save_post_campaign_brief', array( $this, 'check_lock_status' ), 20, 2 );
 		add_filter( 'comment_form_default_fields', array( $this, 'remove_comment_website_field' ) );
@@ -87,6 +90,11 @@ class CMS_Workflow {
 		// Unlock the brief.
 		update_post_meta( $post_id, '_cms_is_locked', 0 );
 
+		// Clear acceptance metadata so it can be re-accepted after editing.
+		delete_post_meta( $post_id, '_cms_acceptance_status' );
+		delete_post_meta( $post_id, '_cms_accepted_by' );
+		delete_post_meta( $post_id, '_cms_accepted_date' );
+
 		// Change status back to draft.
 		wp_update_post(
 			array(
@@ -97,7 +105,35 @@ class CMS_Workflow {
 
 		wp_send_json_success(
 			array(
-				'message' => __( 'Brief unlocked. You can now make changes.', 'campaign-mgmt' ),
+				'message' => __( 'Brief unlocked and acceptance cleared. You can now make changes and have the brief re-accepted.', 'campaign-mgmt' ),
+			)
+		);
+	}
+
+	/**
+	 * Manually clear acceptance status via AJAX
+	 */
+	public function unaccept_brief() {
+		check_ajax_referer( 'cms-admin', 'nonce' );
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied', 'campaign-mgmt' ) ) );
+		}
+
+		$post_id = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
+
+		if ( ! $post_id ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid post ID', 'campaign-mgmt' ) ) );
+		}
+
+		// Clear acceptance metadata.
+		delete_post_meta( $post_id, '_cms_acceptance_status' );
+		delete_post_meta( $post_id, '_cms_accepted_by' );
+		delete_post_meta( $post_id, '_cms_accepted_date' );
+
+		wp_send_json_success(
+			array(
+				'message' => __( 'Acceptance status cleared. Brief can now be re-accepted.', 'campaign-mgmt' ),
 			)
 		);
 	}
@@ -254,5 +290,70 @@ class CMS_Workflow {
 			$location = add_query_arg( 'comment_success', '1', get_permalink( $post->ID ) . '#comments' );
 		}
 		return $location;
+	}
+
+	/**
+	 * Submit comment via AJAX
+	 */
+	public function submit_comment() {
+		// Verify nonce.
+		check_ajax_referer( 'cms_submit_comment', 'nonce' );
+
+		// Sanitize and validate input.
+		$post_id = isset( $_POST['comment_post_ID'] ) ? absint( $_POST['comment_post_ID'] ) : 0;
+		$author = isset( $_POST['author'] ) ? sanitize_text_field( wp_unslash( $_POST['author'] ) ) : '';
+		$email = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '';
+		$content = isset( $_POST['comment'] ) ? sanitize_textarea_field( wp_unslash( $_POST['comment'] ) ) : '';
+
+		// Validate required fields.
+		if ( ! $post_id || ! $author || ! $email || ! $content ) {
+			wp_send_json_error( array( 'message' => __( 'All fields are required.', 'campaign-mgmt' ) ) );
+		}
+
+		// Validate email.
+		if ( ! is_email( $email ) ) {
+			wp_send_json_error( array( 'message' => __( 'Please enter a valid email address.', 'campaign-mgmt' ) ) );
+		}
+
+		// Check if post exists and is a campaign brief.
+		$post = get_post( $post_id );
+		if ( ! $post || 'campaign_brief' !== $post->post_type ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid post.', 'campaign-mgmt' ) ) );
+		}
+
+		// Check if comments are open.
+		if ( ! comments_open( $post_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'Comments are closed for this brief.', 'campaign-mgmt' ) ) );
+		}
+
+		// Prepare comment data.
+		$comment_data = array(
+			'comment_post_ID'      => $post_id,
+			'comment_author'       => $author,
+			'comment_author_email' => $email,
+			'comment_content'      => $content,
+			'comment_type'         => 'comment',
+			'comment_parent'       => 0,
+			'user_id'              => get_current_user_id(),
+			'comment_author_IP'    => $_SERVER['REMOTE_ADDR'],
+			'comment_agent'        => $_SERVER['HTTP_USER_AGENT'],
+			'comment_date'         => current_time( 'mysql' ),
+			'comment_approved'     => 1, // Auto-approve for campaign briefs.
+		);
+
+		// Insert comment.
+		$comment_id = wp_insert_comment( $comment_data );
+
+		if ( ! $comment_id || is_wp_error( $comment_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'Failed to submit comment. Please try again.', 'campaign-mgmt' ) ) );
+		}
+
+		// Send success response.
+		wp_send_json_success(
+			array(
+				'message'    => __( 'Comment submitted successfully!', 'campaign-mgmt' ),
+				'comment_id' => $comment_id,
+			)
+		);
 	}
 }

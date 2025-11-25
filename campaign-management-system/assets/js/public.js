@@ -114,6 +114,71 @@
 				scrollTop: $('.cms-comments-section').offset().top - 100
 			}, 500);
 		});
+
+		// Handle comment form submission via AJAX
+		$('#cms-comment-form').on('submit', function(e) {
+			e.preventDefault();
+
+			var $form = $(this);
+			var $submitBtn = $('#cms-submit-comment');
+			var $response = $('#cms-comment-response');
+			var originalText = $submitBtn.text();
+
+			// Clear previous messages
+			$response.hide().empty();
+
+			// Disable submit button
+			$submitBtn.prop('disabled', true).text('Submitting...');
+
+			// Get form data
+			var formData = {
+				action: 'cms_submit_comment',
+				nonce: $form.find('input[name="cms_comment_nonce"]').val(),
+				comment_post_ID: $form.find('input[name="comment_post_ID"]').val(),
+				author: $('#cms_comment_author').val(),
+				email: $('#cms_comment_email').val(),
+				comment: $('#cms_comment_content').val()
+			};
+
+			// Submit via AJAX
+			$.post(cmsPublic.ajaxUrl, formData)
+				.done(function(response) {
+					if (response.success) {
+						// Show success message
+						$response
+							.html('<div class="cms-comment-success" style="background: #d4edda; border: 1px solid #c3e6cb; padding: 15px; margin: 15px 0; border-radius: 4px; color: #155724;"><strong>✓ ' + response.data.message + '</strong></div>')
+							.show();
+
+						// Clear form
+						$form[0].reset();
+
+						// Scroll to response
+						$('html, body').animate({
+							scrollTop: $response.offset().top - 100
+						}, 500);
+
+						// Reload page after 2 seconds to show new comment
+						setTimeout(function() {
+							location.reload();
+						}, 2000);
+					} else {
+						// Show error message
+						$response
+							.html('<div class="cms-comment-error" style="background: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; margin: 15px 0; border-radius: 4px; color: #721c24;"><strong>✗ Error:</strong> ' + response.data.message + '</div>')
+							.show();
+
+						$submitBtn.prop('disabled', false).text(originalText);
+					}
+				})
+				.fail(function() {
+					// Show error message
+					$response
+						.html('<div class="cms-comment-error" style="background: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; margin: 15px 0; border-radius: 4px; color: #721c24;"><strong>✗ Error:</strong> An error occurred. Please try again.</div>')
+						.show();
+
+					$submitBtn.prop('disabled', false).text(originalText);
+				});
+		});
 	});
 
 })(jQuery);

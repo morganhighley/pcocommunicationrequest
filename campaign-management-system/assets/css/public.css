@@ -414,3 +414,123 @@
 	font-style: italic;
 	margin: 10px 0;
 }
+
+/* Custom Comment Form */
+.cms-comments-wrapper {
+	margin-top: 30px;
+}
+
+.cms-comments-title {
+	font-size: 20px;
+	margin-bottom: 20px;
+	color: #333;
+}
+
+.cms-comment-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.cms-comment-list li {
+	margin-bottom: 20px;
+	padding-bottom: 20px;
+	border-bottom: 1px solid #eee;
+}
+
+.cms-comment-body {
+	display: flex;
+	flex-direction: column;
+}
+
+.cms-comment-author {
+	display: flex;
+	align-items: center;
+	margin-bottom: 10px;
+}
+
+.cms-comment-author img {
+	border-radius: 50%;
+	margin-right: 15px;
+}
+
+.cms-comment-meta {
+	display: flex;
+	flex-direction: column;
+}
+
+.cms-comment-meta strong {
+	font-size: 16px;
+	color: #333;
+}
+
+.cms-comment-meta time {
+	font-size: 13px;
+	color: #999;
+}
+
+.cms-comment-content {
+	padding-left: 65px;
+	color: #555;
+	line-height: 1.6;
+}
+
+.cms-comment-form-wrapper {
+	margin-top: 40px;
+	padding: 30px;
+	background: #f9f9f9;
+	border-radius: 8px;
+}
+
+.cms-comment-form-wrapper h3 {
+	margin-top: 0;
+	color: #333;
+}
+
+.cms-comment-notes {
+	font-size: 14px;
+	color: #666;
+	margin-bottom: 20px;
+}
+
+.cms-form-field {
+	margin-bottom: 20px;
+}
+
+.cms-form-field label {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 8px;
+	color: #333;
+}
+
+.cms-form-field input[type="text"],
+.cms-form-field input[type="email"],
+.cms-form-field textarea {
+	width: 100%;
+	padding: 12px;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	font-size: 14px;
+	font-family: inherit;
+	transition: border-color 0.3s ease;
+}
+
+.cms-form-field input:focus,
+.cms-form-field textarea:focus {
+	outline: none;
+	border-color: #0073aa;
+}
+
+.cms-form-actions {
+	margin-top: 20px;
+}
+
+.cms-comments-closed {
+	font-style: italic;
+	color: #666;
+	padding: 20px;
+	background: #f9f9f9;
+	border-radius: 4px;
+	text-align: center;
+}

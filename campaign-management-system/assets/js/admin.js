@@ -80,6 +80,36 @@
 			});
 		});
 
+		// Unaccept brief (clear acceptance status)
+		$('#cms-unaccept-brief').on('click', function() {
+			if (!confirm('This will clear the acceptance status. The ministry leader will need to accept the brief again. Continue?')) {
+				return;
+			}
+
+			var $btn = $(this);
+			var originalText = $btn.text();
+			$btn.prop('disabled', true).text('Clearing...');
+
+			$.post(ajaxurl, {
+				action: 'cms_unaccept_brief',
+				nonce: cmsAdmin.nonce,
+				post_id: getPostId()
+			})
+			.done(function(response) {
+				if (response.success) {
+					alert(response.data.message);
+					location.reload();
+				} else {
+					alert('Error: ' + response.data.message);
+					$btn.prop('disabled', false).text(originalText);
+				}
+			})
+			.fail(function() {
+				alert('An error occurred. Please try again.');
+				$btn.prop('disabled', false).text(originalText);
+			});
+		});
+
 		// Auto-generate slug from title
 		$('#cms_campaign_title').on('blur', function() {
 			var title = $(this).val();

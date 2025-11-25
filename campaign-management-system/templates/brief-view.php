@@ -105,7 +105,7 @@ while ( have_posts() ) :
 
 		<!-- Acceptance Status Banner -->
 		<?php if ( $accepted_by ) : ?>
-			<div class="cms-acceptance-banner <?php echo esc_attr( $service_level_class ); ?>">
+			<div class="cms-acceptance-banner <?php echo esc_attr( $service_level_class ); ?> no-print">
 				<strong><?php esc_html_e( '✓ Accepted', 'campaign-mgmt' ); ?></strong> by <?php echo esc_html( $accepted_by ); ?>
 				on <?php echo esc_html( date( 'F j, Y', strtotime( $accepted_date ) ) ); ?>
 			</div>
@@ -341,7 +341,13 @@ while ( have_posts() ) :
 			<?php endif; ?>
 			<?php
 			if ( comments_open() || get_comments_number() ) {
-				comments_template();
+				// Use custom comments template.
+				$custom_comments = CMS_PLUGIN_DIR . 'templates/comments.php';
+				if ( file_exists( $custom_comments ) ) {
+					include $custom_comments;
+				} else {
+					comments_template();
+				}
 			}
 			?>
 		</div>
