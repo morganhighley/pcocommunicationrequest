@@ -141,6 +141,57 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<?php endif; ?>
 	</div>
 
+	<!-- Recent Comments -->
+	<div class="cms-dashboard-section">
+		<h2><?php esc_html_e( 'Recent Comments', 'campaign-mgmt' ); ?></h2>
+
+		<?php if ( ! empty( $recent_comments ) ) : ?>
+			<table class="wp-list-table widefat fixed striped">
+				<thead>
+					<tr>
+						<th><?php esc_html_e( 'Author', 'campaign-mgmt' ); ?></th>
+						<th><?php esc_html_e( 'Comment', 'campaign-mgmt' ); ?></th>
+						<th><?php esc_html_e( 'Brief', 'campaign-mgmt' ); ?></th>
+						<th><?php esc_html_e( 'Submitted', 'campaign-mgmt' ); ?></th>
+						<th><?php esc_html_e( 'Actions', 'campaign-mgmt' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ( $recent_comments as $comment ) : ?>
+						<tr>
+							<td>
+								<strong><?php echo esc_html( $comment->comment_author ); ?></strong><br>
+								<small><?php echo esc_html( $comment->comment_author_email ); ?></small>
+							</td>
+							<td>
+								<?php
+								$excerpt = wp_trim_words( $comment->comment_content, 20, '...' );
+								echo esc_html( $excerpt );
+								?>
+							</td>
+							<td>
+								<a href="<?php echo esc_url( get_edit_post_link( $comment->comment_post_ID ) ); ?>">
+									<?php echo esc_html( get_the_title( $comment->comment_post_ID ) ); ?>
+								</a>
+							</td>
+							<td><?php echo esc_html( human_time_diff( strtotime( $comment->comment_date ), current_time( 'timestamp' ) ) . ' ago' ); ?></td>
+							<td>
+								<a href="<?php echo esc_url( get_permalink( $comment->comment_post_ID ) . '#comment-' . $comment->comment_ID ); ?>" class="button button-small" target="_blank">
+									<?php esc_html_e( 'View', 'campaign-mgmt' ); ?>
+								</a>
+								<a href="<?php echo esc_url( admin_url( 'comment.php?action=editcomment&c=' . $comment->comment_ID ) ); ?>" class="button button-small">
+									<?php esc_html_e( 'Edit', 'campaign-mgmt' ); ?>
+								</a>
+							</td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+		<?php else : ?>
+			<p><?php esc_html_e( 'No comments yet.', 'campaign-mgmt' ); ?></p>
+		<?php endif; ?>
+	</div>
+
 	<!-- Quick Links -->
 	<div class="cms-dashboard-section">
 		<h2><?php esc_html_e( 'Quick Links', 'campaign-mgmt' ); ?></h2>

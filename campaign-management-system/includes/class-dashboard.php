@@ -65,7 +65,29 @@ class CMS_Dashboard {
 		$blue_count = $this->get_count_by_service_level( 'Blue' );
 		$black_count = $this->get_count_by_service_level( 'Black' );
 
+		// Get recent comments on campaign briefs.
+		$recent_comments = $this->get_recent_comments( 10 );
+
 		include CMS_PLUGIN_DIR . 'templates/dashboard.php';
+	}
+
+	/**
+	 * Get recent comments on campaign briefs
+	 *
+	 * @param int $limit Number of comments to retrieve.
+	 * @return array Array of comment objects.
+	 */
+	private function get_recent_comments( $limit = 10 ) {
+		$args = array(
+			'post_type'   => 'campaign_brief',
+			'status'      => 'approve',
+			'number'      => $limit,
+			'orderby'     => 'comment_date',
+			'order'       => 'DESC',
+		);
+
+		$comments = get_comments( $args );
+		return $comments;
 	}
 
 	/**
