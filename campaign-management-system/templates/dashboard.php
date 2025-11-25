@@ -88,14 +88,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 						$ministry_terms = get_the_terms( $brief->ID, 'ministry' );
 						$ministry = $ministry_terms && ! is_wp_error( $ministry_terms ) ? $ministry_terms[0]->name : '-';
 
+						$workflow_status = get_post_meta( $brief->ID, '_cms_workflow_status', true );
+						if ( empty( $workflow_status ) ) {
+							$workflow_status = 'draft';
+						}
 						$status_labels = array(
 							'draft'              => __( 'Draft', 'campaign-mgmt' ),
 							'pending_acceptance' => __( 'Pending Acceptance', 'campaign-mgmt' ),
 							'accepted'           => __( 'Accepted', 'campaign-mgmt' ),
 							'archived'           => __( 'Archived', 'campaign-mgmt' ),
-							'publish'            => __( 'Published', 'campaign-mgmt' ),
 						);
-						$status = isset( $status_labels[ $brief->post_status ] ) ? $status_labels[ $brief->post_status ] : $brief->post_status;
+						$status = isset( $status_labels[ $workflow_status ] ) ? $status_labels[ $workflow_status ] : ucfirst( $workflow_status );
 						?>
 						<tr>
 							<td>
@@ -197,18 +200,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<h2><?php esc_html_e( 'Quick Links', 'campaign-mgmt' ); ?></h2>
 		<ul>
 			<li>
-				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=campaign_brief&post_status=pending_acceptance' ) ); ?>">
+				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=campaign_brief&workflow_status=pending_acceptance' ) ); ?>">
 					<?php esc_html_e( 'Briefs Pending Acceptance', 'campaign-mgmt' ); ?>
 					(<?php echo esc_html( $pending_count ); ?>)
 				</a>
 			</li>
 			<li>
-				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=campaign_brief&post_status=accepted' ) ); ?>">
+				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=campaign_brief&workflow_status=accepted' ) ); ?>">
 					<?php esc_html_e( 'Accepted Briefs', 'campaign-mgmt' ); ?>
 					(<?php echo esc_html( $accepted_count ); ?>)
 				</li>
 			<li>
-				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=campaign_brief&post_status=archived' ) ); ?>">
+				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=campaign_brief&workflow_status=archived' ) ); ?>">
 					<?php esc_html_e( 'Archived Campaigns', 'campaign-mgmt' ); ?>
 					(<?php echo esc_html( $archived_count ); ?>)
 				</a>

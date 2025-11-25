@@ -21,11 +21,14 @@ class CMS_Post_Type {
 	public function __construct() {
 		add_action( 'init', array( $this, 'register_post_type' ) );
 		add_action( 'init', array( $this, 'register_taxonomies' ) );
-		add_action( 'init', array( $this, 'register_post_status' ) );
+		// REMOVED: add_action( 'init', array( $this, 'register_post_status' ) );
 		add_filter( 'template_include', array( $this, 'load_template' ) );
 		add_filter( 'single_template', array( $this, 'single_template' ) );
 		add_filter( 'wp_insert_post_data', array( $this, 'enable_comments_on_insert' ), 10, 2 );
 		add_action( 'save_post_campaign_brief', array( $this, 'ensure_comments_open' ), 10, 2 );
+
+		// Set default workflow status for new briefs
+		add_action( 'save_post_campaign_brief', array( $this, 'set_default_workflow_status' ), 5, 2 );
 	}
 
 	/**
@@ -314,6 +317,25 @@ class CMS_Post_Type {
 				)
 			);
 			add_action( 'save_post_campaign_brief', array( $this, 'ensure_comments_open' ), 10, 2 );
+		}
+	}
+
+	/**
+	 * Set default workflow status for new campaign briefs
+	 *
+	 * @param int     $post_id Post ID.
+	 * @param WP_Post $post Post object.
+	 */
+	public function set_default_workflow_status( $post_id, $post ) {
+		// Skip if autosave or revision
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+			return;
+		}
+
+		// Only set if not already set
+		$current_status = get_post_meta( $post_id, '_cms_workflow_status', true );
+		if ( empty( $current_status ) ) {
+			update_post_meta( $post_id, '_cms_workflow_status', 'draft' );
 		}
 	}
 }

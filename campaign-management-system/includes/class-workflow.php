@@ -47,15 +47,10 @@ class CMS_Workflow {
 			wp_send_json_error( array( 'message' => __( 'Missing required fields', 'campaign-mgmt' ) ) );
 		}
 
-		// Update post status to accepted.
-		wp_update_post(
-			array(
-				'ID'          => $post_id,
-				'post_status' => 'accepted',
-			)
-		);
+		// Update workflow status via meta field (NOT post_status)
+		update_post_meta( $post_id, '_cms_workflow_status', 'accepted' );
 
-		// Update meta fields.
+		// Update acceptance meta fields.
 		update_post_meta( $post_id, '_cms_acceptance_status', 'accepted' );
 		update_post_meta( $post_id, '_cms_accepted_by', $acceptor_name . ' (' . $acceptor_email . ')' );
 		update_post_meta( $post_id, '_cms_accepted_date', current_time( 'mysql' ) );
@@ -98,13 +93,8 @@ class CMS_Workflow {
 		delete_post_meta( $post_id, '_cms_accepted_by' );
 		delete_post_meta( $post_id, '_cms_accepted_date' );
 
-		// Change status back to pending_acceptance so ministry leader can re-review.
-		wp_update_post(
-			array(
-				'ID'          => $post_id,
-				'post_status' => 'pending_acceptance',
-			)
-		);
+		// Change workflow status back to pending_acceptance via meta field
+		update_post_meta( $post_id, '_cms_workflow_status', 'pending_acceptance' );
 
 		wp_send_json_success(
 			array(
@@ -134,13 +124,8 @@ class CMS_Workflow {
 		delete_post_meta( $post_id, '_cms_accepted_by' );
 		delete_post_meta( $post_id, '_cms_accepted_date' );
 
-		// Change status back to pending_acceptance so it appears in the correct dashboard view.
-		wp_update_post(
-			array(
-				'ID'          => $post_id,
-				'post_status' => 'pending_acceptance',
-			)
-		);
+		// Change workflow status back to pending_acceptance via meta field
+		update_post_meta( $post_id, '_cms_workflow_status', 'pending_acceptance' );
 
 		wp_send_json_success(
 			array(
@@ -191,25 +176,40 @@ class CMS_Workflow {
 			return;
 		}
 
+		$current_workflow_status = get_post_meta( $post->ID, '_cms_workflow_status', true );
+		if ( empty( $current_workflow_status ) ) {
+			$current_workflow_status = 'draft';
+		}
+
 		?>
 		<script type="text/javascript">
 		jQuery(document).ready(function($) {
-			// Add status change buttons below publish box
-			var statusButtons = '<div id="cms-status-buttons" style="margin: 10px 0;">';
-			statusButtons += '<p><strong><?php esc_html_e( 'Quick Status Change:', 'campaign-mgmt' ); ?></strong></p>';
-			statusButtons += '<button type="button" class="button button-secondary cms-status-btn" data-status="draft"><?php esc_html_e( 'Mark as Draft', 'campaign-mgmt' ); ?></button> ';
-			statusButtons += '<button type="button" class="button button-secondary cms-status-btn" data-status="pending_acceptance"><?php esc_html_e( 'Send for Acceptance', 'campaign-mgmt' ); ?></button> ';
-			statusButtons += '<button type="button" class="button button-secondary cms-status-btn" data-status="archived"><?php esc_html_e( 'Archive', 'campaign-mgmt' ); ?></button>';
+			// Add workflow status buttons below publish box
+			var currentStatus = '<?php echo esc_js( $current_workflow_status ); ?>';
+			var statusButtons = '<div id="cms-workflow-buttons" style="margin: 10px 0; padding: 10px; background: #f9f9f9; border: 1px solid #ddd;">';
+			statusButtons += '<p><strong><?php esc_html_e( 'Workflow Status:', 'campaign-mgmt' ); ?></strong> <span id="cms-current-workflow-status" style="text-transform: capitalize;">' + currentStatus.replace('_', ' ') + '</span></p>';
+			statusButtons += '<p style="margin-bottom: 5px;"><strong><?php esc_html_e( 'Change To:', 'campaign-mgmt' ); ?></strong></p>';
+			statusButtons += '<button type="button" class="button button-small cms-workflow-btn" data-status="draft"><?php esc_html_e( 'Draft', 'campaign-mgmt' ); ?></button> ';
+			statusButtons += '<button type="button" class="button button-small cms-workflow-btn" data-status="pending_acceptance"><?php esc_html_e( 'Pending Acceptance', 'campaign-mgmt' ); ?></button> ';
+			statusButtons += '<button type="button" class="button button-small cms-workflow-btn" data-status="archived"><?php esc_html_e( 'Archived', 'campaign-mgmt' ); ?></button>';
+			statusButtons += '<input type="hidden" name="cms_workflow_status" id="cms_workflow_status" value="' + currentStatus + '" />';
 			statusButtons += '</div>';
 
 			$('#submitdiv .inside').append(statusButtons);
 
-			// Handle status button clicks
-			$('.cms-status-btn').on('click', function() {
+			// Handle workflow status button clicks
+			$('.cms-workflow-btn').on('click', function() {
 				var status = $(this).data('status');
-				$('#post_status').val(status);
-				$('#publish').click();
+				$('#cms_workflow_status').val(status);
+				$('#cms-current-workflow-status').text(status.replace('_', ' '));
+
+				// Highlight the selected button
+				$('.cms-workflow-btn').removeClass('button-primary');
+				$(this).addClass('button-primary');
 			});
+
+			// Highlight current status button on load
+			$('.cms-workflow-btn[data-status="' + currentStatus + '"]').addClass('button-primary');
 		});
 		</script>
 		<?php
@@ -222,20 +222,21 @@ class CMS_Workflow {
 	 * @param WP_Post $post Post object.
 	 */
 	public function check_lock_status( $post_id, $post ) {
-		// If status is accepted and not already locked, lock it.
-		if ( 'accepted' === $post->post_status ) {
+		// Get workflow status from meta
+		$workflow_status = get_post_meta( $post_id, '_cms_workflow_status', true );
+
+		// If workflow status is accepted and not already locked, lock it.
+		if ( 'accepted' === $workflow_status ) {
 			$is_locked = get_post_meta( $post_id, '_cms_is_locked', true );
 			if ( ! $is_locked ) {
 				update_post_meta( $post_id, '_cms_is_locked', 1 );
 			}
 		}
 
-		// If brief was locked and now edited, unlock it and change status.
+		// If brief was locked and workflow status changed, unlock it
 		$is_locked = get_post_meta( $post_id, '_cms_is_locked', true );
-		if ( $is_locked && 'accepted' !== $post->post_status ) {
-			// Brief was edited after being locked, so it needs re-acceptance.
+		if ( $is_locked && 'accepted' !== $workflow_status ) {
 			if ( isset( $_POST['cms_meta_box_nonce'] ) ) {
-				// This is an edit from the admin, not just a status change.
 				update_post_meta( $post_id, '_cms_is_locked', 0 );
 			}
 		}

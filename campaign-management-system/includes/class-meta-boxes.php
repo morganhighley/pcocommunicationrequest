@@ -385,52 +385,62 @@ class CMS_Meta_Boxes {
 	 * @param WP_Post $post Current post object.
 	 */
 	public function render_workflow( $post ) {
+		$workflow_status = get_post_meta( $post->ID, '_cms_workflow_status', true );
+		if ( empty( $workflow_status ) ) {
+			$workflow_status = 'draft';
+		}
+
 		$acceptance_status = get_post_meta( $post->ID, '_cms_acceptance_status', true );
 		$accepted_by = get_post_meta( $post->ID, '_cms_accepted_by', true );
 		$accepted_date = get_post_meta( $post->ID, '_cms_accepted_date', true );
 		$is_locked = get_post_meta( $post->ID, '_cms_is_locked', true );
-		?>
 
+		$workflow_labels = array(
+			'draft'              => __( 'Draft', 'campaign-mgmt' ),
+			'pending_acceptance' => __( 'Pending Acceptance', 'campaign-mgmt' ),
+			'accepted'           => __( 'Accepted', 'campaign-mgmt' ),
+			'archived'           => __( 'Archived', 'campaign-mgmt' ),
+		);
+		?>
 		<div class="cms-workflow-status">
-			<?php if ( $accepted_by && $accepted_date ) : ?>
-				<p class="cms-accepted-info">
-					<strong><?php esc_html_e( 'Accepted by:', 'campaign-mgmt' ); ?></strong><br>
+			<p>
+				<strong><?php esc_html_e( 'Workflow Status:', 'campaign-mgmt' ); ?></strong><br>
+				<select name="cms_workflow_status" id="cms_workflow_status_select" style="width: 100%;">
+					<?php foreach ( $workflow_labels as $value => $label ) : ?>
+						<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $workflow_status, $value ); ?>>
+							<?php echo esc_html( $label ); ?>
+						</option>
+					<?php endforeach; ?>
+				</select>
+			</p>
+
+			<?php if ( $accepted_by ) : ?>
+				<p class="cms-accepted-info" style="background: #d4edda; padding: 10px; border-radius: 4px;">
+					<strong><?php esc_html_e( '✓ Accepted by:', 'campaign-mgmt' ); ?></strong><br>
 					<?php echo esc_html( $accepted_by ); ?><br>
 					<small><?php echo esc_html( date( 'F j, Y \a\t g:i a', strtotime( $accepted_date ) ) ); ?></small>
 				</p>
 			<?php endif; ?>
 
 			<?php if ( $is_locked ) : ?>
-				<div class="notice notice-warning inline" style="margin: 0 0 15px 0;">
-					<p><strong><?php esc_html_e( '🔒 This brief is locked', 'campaign-mgmt' ); ?></strong><br>
-					<?php esc_html_e( 'Unlocking will clear acceptance and require ministry leader to re-accept after editing.', 'campaign-mgmt' ); ?></p>
-				</div>
+				<p class="cms-locked-notice" style="background: #fff3cd; padding: 10px; border-radius: 4px;">
+					<strong><?php esc_html_e( '🔒 Brief is locked', 'campaign-mgmt' ); ?></strong><br>
+					<small><?php esc_html_e( 'This brief has been accepted and is locked for editing.', 'campaign-mgmt' ); ?></small>
+				</p>
 				<p>
-					<button type="button" class="button button-large button-secondary" id="cms-unlock-brief" style="width: 100%; text-align: center;">
-						<?php esc_html_e( '🔓 Unlock & Clear Acceptance', 'campaign-mgmt' ); ?>
+					<button type="button" class="button button-secondary" id="cms-unlock-brief">
+						<?php esc_html_e( 'Unlock Brief', 'campaign-mgmt' ); ?>
 					</button>
 				</p>
-			<?php else : ?>
-				<p class="description">
-					<strong><?php esc_html_e( 'Status:', 'campaign-mgmt' ); ?></strong>
-					<?php
-					if ( $accepted_by ) {
-						esc_html_e( 'Brief was accepted but is now unlocked. Ministry leader should re-accept after final review.', 'campaign-mgmt' );
-					} else {
-						esc_html_e( 'Brief has not been accepted yet. Share the link with ministry leader for review and acceptance.', 'campaign-mgmt' );
-					}
-					?>
-				</p>
-				<?php if ( $accepted_by ) : ?>
-					<p>
-						<button type="button" class="button button-secondary" id="cms-unaccept-brief" style="width: 100%; text-align: center;">
-							<?php esc_html_e( 'Clear Acceptance Status', 'campaign-mgmt' ); ?>
-						</button>
-					</p>
-				<?php endif; ?>
 			<?php endif; ?>
 
-			<input type="hidden" id="cms_is_locked" name="cms_is_locked" value="<?php echo esc_attr( $is_locked ); ?>" />
+			<?php if ( $accepted_by && ! $is_locked ) : ?>
+				<p>
+					<button type="button" class="button button-secondary" id="cms-unaccept-brief">
+						<?php esc_html_e( 'Clear Acceptance', 'campaign-mgmt' ); ?>
+					</button>
+				</p>
+			<?php endif; ?>
 		</div>
 		<?php
 	}
@@ -663,6 +673,15 @@ class CMS_Meta_Boxes {
 			update_post_meta( $post_id, '_cms_channel_plan', wp_json_encode( $channel_plan ) );
 		}
 
+		// Save workflow status
+		if ( isset( $_POST['cms_workflow_status'] ) ) {
+			$allowed_statuses = array( 'draft', 'pending_acceptance', 'accepted', 'archived' );
+			$new_status = sanitize_text_field( $_POST['cms_workflow_status'] );
+			if ( in_array( $new_status, $allowed_statuses, true ) ) {
+				update_post_meta( $post_id, '_cms_workflow_status', $new_status );
+			}
+		}
+
 		// Save workflow fields.
 		if ( isset( $_POST['cms_is_locked'] ) ) {
 			update_post_meta( $post_id, '_cms_is_locked', absint( $_POST['cms_is_locked'] ) );
@@ -745,16 +764,28 @@ class CMS_Meta_Boxes {
 				break;
 
 			case 'status':
-				$post = get_post( $post_id );
+				$workflow_status = get_post_meta( $post_id, '_cms_workflow_status', true );
+				if ( empty( $workflow_status ) ) {
+					$workflow_status = 'draft';
+				}
 				$status_labels = array(
 					'draft'              => __( 'Draft', 'campaign-mgmt' ),
 					'pending_acceptance' => __( 'Pending Acceptance', 'campaign-mgmt' ),
 					'accepted'           => __( 'Accepted', 'campaign-mgmt' ),
 					'archived'           => __( 'Archived', 'campaign-mgmt' ),
-					'publish'            => __( 'Published', 'campaign-mgmt' ),
 				);
-				$status = isset( $status_labels[ $post->post_status ] ) ? $status_labels[ $post->post_status ] : $post->post_status;
-				echo esc_html( $status );
+				$status_label = isset( $status_labels[ $workflow_status ] ) ? $status_labels[ $workflow_status ] : ucfirst( $workflow_status );
+
+				// Add color coding
+				$status_colors = array(
+					'draft'              => '#6c757d',
+					'pending_acceptance' => '#ffc107',
+					'accepted'           => '#28a745',
+					'archived'           => '#17a2b8',
+				);
+				$color = isset( $status_colors[ $workflow_status ] ) ? $status_colors[ $workflow_status ] : '#6c757d';
+
+				echo '<span style="background: ' . esc_attr( $color ) . '; color: #fff; padding: 3px 8px; border-radius: 3px; font-size: 11px;">' . esc_html( $status_label ) . '</span>';
 				break;
 		}
 	}

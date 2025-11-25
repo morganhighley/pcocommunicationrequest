@@ -54,7 +54,7 @@ class CMS_Dashboard {
 			array(
 				'post_type'      => 'campaign_brief',
 				'posts_per_page' => 10,
-				'post_status'    => array( 'draft', 'pending_acceptance', 'accepted', 'publish' ),
+				'post_status'    => array( 'publish', 'draft', 'private' ),
 				'orderby'        => 'modified',
 				'order'          => 'DESC',
 			)
@@ -83,7 +83,7 @@ class CMS_Dashboard {
 			'post_type'      => 'campaign_brief',
 			'posts_per_page' => -1,
 			'fields'         => 'ids',
-			'post_status'    => array( 'publish', 'draft', 'pending_acceptance', 'accepted', 'archived' ),
+			'post_status'    => array( 'publish', 'draft', 'private' ),
 		));
 
 		if ( empty( $brief_ids ) ) {
@@ -103,15 +103,28 @@ class CMS_Dashboard {
 	}
 
 	/**
-	 * Get count of briefs by status
+	 * Get count of briefs by workflow status
 	 *
-	 * @param string $status Post status.
+	 * @param string $status Workflow status (draft, pending_acceptance, accepted, archived).
 	 * @return int
 	 */
 	private function get_count_by_status( $status ) {
-		// Use wp_count_posts() for more reliable counting of custom post statuses
-		$counts = wp_count_posts( 'campaign_brief' );
-		return isset( $counts->$status ) ? absint( $counts->$status ) : 0;
+		global $wpdb;
+
+		// Count posts with matching workflow status meta
+		$count = $wpdb->get_var( $wpdb->prepare(
+			"SELECT COUNT(DISTINCT p.ID)
+			FROM {$wpdb->posts} p
+			INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
+			WHERE p.post_type = %s
+			AND p.post_status IN ('publish', 'draft', 'private')
+			AND pm.meta_key = '_cms_workflow_status'
+			AND pm.meta_value = %s",
+			'campaign_brief',
+			$status
+		));
+
+		return absint( $count );
 	}
 
 	/**
@@ -148,36 +161,47 @@ class CMS_Dashboard {
 	public function add_custom_views( $views ) {
 		// Add pending acceptance view.
 		$pending_count = $this->get_count_by_status( 'pending_acceptance' );
-		if ( $pending_count > 0 ) {
-			$views['pending_acceptance'] = sprintf(
-				'<a href="%s">%s <span class="count">(%d)</span></a>',
-				admin_url( 'edit.php?post_type=campaign_brief&post_status=pending_acceptance' ),
-				__( 'Pending Acceptance', 'campaign-mgmt' ),
-				$pending_count
-			);
-		}
+		$current = isset( $_GET['workflow_status'] ) && 'pending_acceptance' === $_GET['workflow_status'] ? ' class="current"' : '';
+		$views['pending_acceptance'] = sprintf(
+			'<a href="%s"%s>%s <span class="count">(%d)</span></a>',
+			admin_url( 'edit.php?post_type=campaign_brief&workflow_status=pending_acceptance' ),
+			$current,
+			__( 'Pending Acceptance', 'campaign-mgmt' ),
+			$pending_count
+		);
 
 		// Add accepted view.
 		$accepted_count = $this->get_count_by_status( 'accepted' );
-		if ( $accepted_count > 0 ) {
-			$views['accepted'] = sprintf(
-				'<a href="%s">%s <span class="count">(%d)</span></a>',
-				admin_url( 'edit.php?post_type=campaign_brief&post_status=accepted' ),
-				__( 'Accepted', 'campaign-mgmt' ),
-				$accepted_count
-			);
-		}
+		$current = isset( $_GET['workflow_status'] ) && 'accepted' === $_GET['workflow_status'] ? ' class="current"' : '';
+		$views['accepted'] = sprintf(
+			'<a href="%s"%s>%s <span class="count">(%d)</span></a>',
+			admin_url( 'edit.php?post_type=campaign_brief&workflow_status=accepted' ),
+			$current,
+			__( 'Accepted', 'campaign-mgmt' ),
+			$accepted_count
+		);
 
 		// Add archived view.
 		$archived_count = $this->get_count_by_status( 'archived' );
-		if ( $archived_count > 0 ) {
-			$views['archived'] = sprintf(
-				'<a href="%s">%s <span class="count">(%d)</span></a>',
-				admin_url( 'edit.php?post_type=campaign_brief&post_status=archived' ),
-				__( 'Archived', 'campaign-mgmt' ),
-				$archived_count
-			);
-		}
+		$current = isset( $_GET['workflow_status'] ) && 'archived' === $_GET['workflow_status'] ? ' class="current"' : '';
+		$views['archived'] = sprintf(
+			'<a href="%s"%s>%s <span class="count">(%d)</span></a>',
+			admin_url( 'edit.php?post_type=campaign_brief&workflow_status=archived' ),
+			$current,
+			__( 'Archived', 'campaign-mgmt' ),
+			$archived_count
+		);
+
+		// Add draft view (workflow draft, not WP draft)
+		$draft_count = $this->get_count_by_status( 'draft' );
+		$current = isset( $_GET['workflow_status'] ) && 'draft' === $_GET['workflow_status'] ? ' class="current"' : '';
+		$views['cms_draft'] = sprintf(
+			'<a href="%s"%s>%s <span class="count">(%d)</span></a>',
+			admin_url( 'edit.php?post_type=campaign_brief&workflow_status=draft' ),
+			$current,
+			__( 'Brief Drafts', 'campaign-mgmt' ),
+			$draft_count
+		);
 
 		return $views;
 	}
@@ -192,6 +216,27 @@ class CMS_Dashboard {
 			return;
 		}
 
+		// Workflow status filter
+		$workflow_statuses = array(
+			'draft'              => __( 'Draft', 'campaign-mgmt' ),
+			'pending_acceptance' => __( 'Pending Acceptance', 'campaign-mgmt' ),
+			'accepted'           => __( 'Accepted', 'campaign-mgmt' ),
+			'archived'           => __( 'Archived', 'campaign-mgmt' ),
+		);
+
+		$current_workflow = isset( $_GET['workflow_status'] ) ? sanitize_text_field( $_GET['workflow_status'] ) : '';
+		echo '<select name="workflow_status">';
+		echo '<option value="">' . esc_html__( 'All Workflow Statuses', 'campaign-mgmt' ) . '</option>';
+		foreach ( $workflow_statuses as $value => $label ) {
+			printf(
+				'<option value="%s"%s>%s</option>',
+				esc_attr( $value ),
+				selected( $current_workflow, $value, false ),
+				esc_html( $label )
+			);
+		}
+		echo '</select>';
+
 		// Service level filter.
 		$service_levels = get_terms(
 			array(
@@ -200,7 +245,7 @@ class CMS_Dashboard {
 			)
 		);
 
-		if ( ! empty( $service_levels ) ) {
+		if ( ! empty( $service_levels ) && ! is_wp_error( $service_levels ) ) {
 			$current_level = isset( $_GET['service_level'] ) ? sanitize_text_field( $_GET['service_level'] ) : '';
 			echo '<select name="service_level">';
 			echo '<option value="">' . esc_html__( 'All Service Levels', 'campaign-mgmt' ) . '</option>';
@@ -223,7 +268,7 @@ class CMS_Dashboard {
 			)
 		);
 
-		if ( ! empty( $ministries ) ) {
+		if ( ! empty( $ministries ) && ! is_wp_error( $ministries ) ) {
 			$current_ministry = isset( $_GET['ministry'] ) ? sanitize_text_field( $_GET['ministry'] ) : '';
 			echo '<select name="ministry">';
 			echo '<option value="">' . esc_html__( 'All Ministries', 'campaign-mgmt' ) . '</option>';
@@ -251,18 +296,28 @@ class CMS_Dashboard {
 			return;
 		}
 
+		// Workflow status filter
+		if ( isset( $_GET['workflow_status'] ) && '' !== $_GET['workflow_status'] ) {
+			$meta_query = $query->get( 'meta_query' ) ? $query->get( 'meta_query' ) : array();
+			$meta_query[] = array(
+				'key'   => '_cms_workflow_status',
+				'value' => sanitize_text_field( $_GET['workflow_status'] ),
+			);
+			$query->set( 'meta_query', $meta_query );
+
+			// Make sure we're not filtering by WordPress post_status when using workflow filter
+			$query->set( 'post_status', array( 'publish', 'draft', 'private' ) );
+		}
+
 		// Service level filter.
 		if ( isset( $_GET['service_level'] ) && '' !== $_GET['service_level'] ) {
-			$query->set(
-				'tax_query',
-				array(
-					array(
-						'taxonomy' => 'service_level',
-						'field'    => 'slug',
-						'terms'    => sanitize_text_field( $_GET['service_level'] ),
-					),
-				)
+			$tax_query = $query->get( 'tax_query' ) ? $query->get( 'tax_query' ) : array();
+			$tax_query[] = array(
+				'taxonomy' => 'service_level',
+				'field'    => 'slug',
+				'terms'    => sanitize_text_field( $_GET['service_level'] ),
 			);
+			$query->set( 'tax_query', $tax_query );
 		}
 
 		// Ministry filter.
