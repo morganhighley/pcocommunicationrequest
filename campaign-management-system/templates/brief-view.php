@@ -25,6 +25,20 @@ while ( have_posts() ) :
 	$campaign_slug = get_post_meta( get_the_ID(), '_cms_campaign_slug', true );
 	$event_dates = get_post_meta( get_the_ID(), '_cms_event_dates', true );
 	$promotion_dates = get_post_meta( get_the_ID(), '_cms_promotion_dates', true );
+	$promotion_start_date = get_post_meta( get_the_ID(), '_cms_promotion_start_date', true );
+	$promotion_end_date = get_post_meta( get_the_ID(), '_cms_promotion_end_date', true );
+
+	// Format promotion dates for display
+	if ( $promotion_start_date && $promotion_end_date ) {
+		$promotion_dates_display = date( 'F j', strtotime( $promotion_start_date ) ) . ' - ' . date( 'F j, Y', strtotime( $promotion_end_date ) );
+	} elseif ( $promotion_start_date ) {
+		$promotion_dates_display = date( 'F j, Y', strtotime( $promotion_start_date ) ) . ' and ongoing';
+	} elseif ( $promotion_dates ) {
+		$promotion_dates_display = $promotion_dates;
+	} else {
+		$promotion_dates_display = '';
+	}
+
 	$file_path = get_post_meta( get_the_ID(), '_cms_file_path', true );
 	$livestream_location = get_post_meta( get_the_ID(), '_cms_livestream_location', true );
 
@@ -140,7 +154,7 @@ while ( have_posts() ) :
 				</tr>
 				<tr>
 					<td class="cms-label"><?php esc_html_e( 'Dates for promotion', 'campaign-mgmt' ); ?></td>
-					<td class="cms-value"><?php echo esc_html( $promotion_dates ); ?></td>
+					<td class="cms-value"><?php echo esc_html( $promotion_dates_display ); ?></td>
 				</tr>
 			</table>
 
@@ -266,7 +280,7 @@ while ( have_posts() ) :
 						<tr class="promo-period-row">
 							<td colspan="3" class="promo-period">
 								<strong><?php esc_html_e( 'Promo Period:', 'campaign-mgmt' ); ?></strong>
-								<?php echo esc_html( $promotion_dates ); ?>
+								<?php echo esc_html( $promotion_dates_display ); ?>
 							</td>
 						</tr>
 						<?php foreach ( $channel_plan as $row ) : ?>
