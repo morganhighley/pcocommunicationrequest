@@ -196,22 +196,37 @@ class CMS_API_Planning_Center {
 	/**
 	 * Create task in Planning Center for brief acceptance
 	 *
-	 * Phase 2 implementation
+	 * Note: Planning Center Tasks may not have a public API endpoint yet.
+	 * This method attempts to create a task via available API methods.
 	 *
 	 * @param int    $post_id Brief post ID.
 	 * @param string $assignee_email Email of person to assign task to.
 	 * @return bool|WP_Error
 	 */
 	public function create_acceptance_task( $post_id, $assignee_email ) {
+		if ( empty( $this->app_id ) || empty( $this->secret ) ) {
+			$error = new WP_Error(
+				'missing_credentials',
+				__( 'Planning Center API credentials not configured. Task not created.', 'campaign-mgmt' )
+			);
+			error_log( 'CMS: ' . $error->get_error_message() );
+			return $error;
+		}
+
 		$post = get_post( $post_id );
 		$brief_url = get_permalink( $post_id );
 
+		// Attempt 1: Try the Tasks API endpoint (if it exists)
 		$task_data = array(
 			'data' => array(
 				'type'       => 'Task',
 				'attributes' => array(
+					'name'        => sprintf(
+						__( 'Review & Accept Campaign Brief: %s', 'campaign-mgmt' ),
+						$post->post_title
+					),
 					'description' => sprintf(
-						__( 'Review and accept campaign brief: %s\n\n%s', 'campaign-mgmt' ),
+						__( "Please review and accept the campaign brief.\n\nBrief: %s\nLink: %s", 'campaign-mgmt' ),
 						$post->post_title,
 						$brief_url
 					),
@@ -220,13 +235,85 @@ class CMS_API_Planning_Center {
 			),
 		);
 
-		// Phase 2: Implement actual API call to create task.
-		// $response = $this->api_request( '/people/v2/tasks', array(
-		//     'method' => 'POST',
-		//     'body'   => wp_json_encode( $task_data ),
-		// ) );
+		// Try Tasks API first
+		$response = $this->api_post( '/tasks/v2/tasks', $task_data );
 
-		return true;
+		if ( ! is_wp_error( $response ) ) {
+			error_log( 'CMS: Successfully created Planning Center task via /tasks/v2/tasks' );
+			return true;
+		}
+
+		// If Tasks API doesn't work, try People API
+		error_log( 'CMS: Tasks API failed, trying People API: ' . $response->get_error_message() );
+		$response = $this->api_post( '/people/v2/tasks', $task_data );
+
+		if ( ! is_wp_error( $response ) ) {
+			error_log( 'CMS: Successfully created Planning Center task via /people/v2/tasks' );
+			return true;
+		}
+
+		// Both attempts failed - log detailed error
+		$error_msg = sprintf(
+			'Failed to create Planning Center task for brief "%s" (ID: %d). Error: %s. This likely means Planning Center Tasks API is not available yet. You will need to create the task manually in Planning Center.',
+			$post->post_title,
+			$post_id,
+			$response->get_error_message()
+		);
+		error_log( 'CMS: ' . $error_msg );
+
+		// Add admin notice
+		update_post_meta( $post_id, '_cms_pc_task_error', $error_msg );
+
+		return new WP_Error( 'task_creation_failed', $error_msg );
+	}
+
+	/**
+	 * Make POST request to Planning Center API
+	 *
+	 * @param string $endpoint API endpoint.
+	 * @param array  $data Data to send.
+	 * @return array|WP_Error
+	 */
+	private function api_post( $endpoint, $data ) {
+		if ( empty( $this->app_id ) || empty( $this->secret ) ) {
+			return new WP_Error( 'missing_credentials', __( 'API credentials not configured', 'campaign-mgmt' ) );
+		}
+
+		$url = $this->api_base . $endpoint;
+
+		$args = array(
+			'method'  => 'POST',
+			'headers' => array(
+				'Authorization' => 'Basic ' . base64_encode( $this->app_id . ':' . $this->secret ),
+				'Content-Type'  => 'application/json',
+			),
+			'body'    => wp_json_encode( $data ),
+			'timeout' => 30,
+		);
+
+		$response = wp_remote_post( $url, $args );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$status_code = wp_remote_retrieve_response_code( $response );
+		$body = wp_remote_retrieve_body( $response );
+		$data = json_decode( $body, true );
+
+		// Log the response for debugging
+		error_log( sprintf( 'CMS PC API: POST %s returned %d', $endpoint, $status_code ) );
+
+		if ( $status_code >= 400 ) {
+			$error_message = isset( $data['errors'][0]['detail'] ) ? $data['errors'][0]['detail'] : 'Unknown API error';
+			return new WP_Error( 'api_error', sprintf( 'API returned %d: %s', $status_code, $error_message ) );
+		}
+
+		if ( ! $data ) {
+			return new WP_Error( 'invalid_response', __( 'Invalid API response', 'campaign-mgmt' ) );
+		}
+
+		return $data;
 	}
 
 	/**
