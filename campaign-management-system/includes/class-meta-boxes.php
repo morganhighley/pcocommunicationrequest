@@ -391,14 +391,25 @@ class CMS_Meta_Boxes {
 			<?php endif; ?>
 
 			<?php if ( $is_locked ) : ?>
-				<div class="notice notice-warning inline">
+				<div class="notice notice-warning inline" style="margin: 0 0 15px 0;">
 					<p><strong><?php esc_html_e( '🔒 This brief is locked', 'campaign-mgmt' ); ?></strong><br>
 					<?php esc_html_e( 'Editing will require re-acceptance from ministry leader.', 'campaign-mgmt' ); ?></p>
 				</div>
 				<p>
-					<button type="button" class="button button-secondary" id="cms-unlock-brief">
-						<?php esc_html_e( 'Unlock Brief', 'campaign-mgmt' ); ?>
+					<button type="button" class="button button-large button-secondary" id="cms-unlock-brief" style="width: 100%; text-align: center;">
+						<?php esc_html_e( '🔓 Unlock Brief', 'campaign-mgmt' ); ?>
 					</button>
+				</p>
+			<?php else : ?>
+				<p class="description">
+					<strong><?php esc_html_e( 'Status:', 'campaign-mgmt' ); ?></strong>
+					<?php
+					if ( $accepted_by ) {
+						esc_html_e( 'Brief was accepted and unlocked for editing.', 'campaign-mgmt' );
+					} else {
+						esc_html_e( 'Brief is not locked. You can edit freely.', 'campaign-mgmt' );
+					}
+					?>
 				</p>
 			<?php endif; ?>
 
@@ -431,7 +442,7 @@ class CMS_Meta_Boxes {
 				<?php foreach ( $service_levels as $level ) : ?>
 					<label style="display: block; margin: 8px 0;">
 						<input type="radio"
-							name="tax_input[service_level]"
+							name="cms_service_level_id"
 							value="<?php echo esc_attr( $level->term_id ); ?>"
 							<?php checked( $current_level, $level->term_id ); ?>
 						/>
@@ -586,8 +597,11 @@ class CMS_Meta_Boxes {
 		}
 
 		// Save service level taxonomy.
-		if ( isset( $_POST['tax_input']['service_level'] ) ) {
-			$term_id = absint( $_POST['tax_input']['service_level'] );
+		if ( isset( $_POST['cms_service_level_id'] ) && ! empty( $_POST['cms_service_level_id'] ) ) {
+			$term_id = absint( $_POST['cms_service_level_id'] );
+			// First, remove all existing service level terms to prevent duplicates
+			wp_set_object_terms( $post_id, array(), 'service_level', false );
+			// Then set the single selected term
 			wp_set_object_terms( $post_id, $term_id, 'service_level', false );
 		}
 	}
