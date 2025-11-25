@@ -387,27 +387,32 @@
 
 	/* Keep page 1 compact to fit on one page */
 	.cms-page-1 {
-		padding: 20px 30px;
+		padding: 15px 25px;
 	}
 
 	.cms-page-1 .cms-brief-header {
-		font-size: 24px;
-		margin-bottom: 8px;
-		padding-bottom: 8px;
+		font-size: 22px;
+		margin-bottom: 5px;
+		padding-bottom: 5px;
 	}
 
 	.cms-page-1 .cms-section-title {
-		font-size: 18px;
-		margin: 15px 0 10px 0;
+		font-size: 16px;
+		margin: 10px 0 8px 0;
 	}
 
 	.cms-page-1 .cms-info-table td {
-		padding: 8px 12px;
-		font-size: 13px;
+		padding: 6px 10px;
+		font-size: 12px;
+		line-height: 1.3;
 	}
 
 	.cms-page-1 .cms-info-table {
-		margin-bottom: 12px;
+		margin-bottom: 8px;
+	}
+
+	.cms-page-1 .cms-ministry-label {
+		font-size: 18px;
 	}
 
 	body {

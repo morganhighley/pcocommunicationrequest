@@ -306,38 +306,19 @@ class CMS_Workflow {
 	/**
 	 * Create Planning Center task for accepted brief
 	 *
+	 * NOTE: Planning Center Tasks API integration is disabled pending API release.
+	 * This feature will be available in a future upgrade once Planning Center
+	 * releases their Tasks API endpoint.
+	 *
 	 * @param int    $post_id Post ID.
 	 * @param string $assignee_email Email of person to assign task to.
 	 */
 	private function create_planning_center_task( $post_id, $assignee_email ) {
-		// Only attempt if API is configured.
-		$app_id = get_option( 'cms_pc_app_id', '' );
-		$secret = get_option( 'cms_pc_secret', '' );
-
-		if ( empty( $app_id ) || empty( $secret ) ) {
-			error_log( 'CMS: Planning Center API not configured. Skipping task creation.' );
-			return;
-		}
-
-		// Load Planning Center API class if not already loaded.
-		if ( ! class_exists( 'CMS_API_Planning_Center' ) ) {
-			require_once CMS_PLUGIN_DIR . 'includes/class-api-planning-center.php';
-		}
-
-		$pc_api = new CMS_API_Planning_Center();
-		$result = $pc_api->create_acceptance_task( $post_id, $assignee_email );
-
-		if ( is_wp_error( $result ) ) {
-			// Task creation failed - this is expected if Tasks API is not available yet.
-			// Error is already logged by the API class.
-			update_post_meta( $post_id, '_cms_pc_task_status', 'failed' );
-			update_post_meta( $post_id, '_cms_pc_task_error', $result->get_error_message() );
-		} else {
-			// Task created successfully!
-			update_post_meta( $post_id, '_cms_pc_task_status', 'created' );
-			delete_post_meta( $post_id, '_cms_pc_task_error' );
-			error_log( 'CMS: Planning Center task created successfully for brief ' . $post_id );
-		}
+		// Planning Center Tasks API integration is currently disabled.
+		// This feature is planned for a future upgrade when the API is available.
+		error_log( 'CMS: Planning Center task creation disabled - awaiting API release. This will be a future upgrade.' );
+		update_post_meta( $post_id, '_cms_pc_task_status', 'pending_api_release' );
+		return;
 	}
 
 	/**
@@ -396,6 +377,9 @@ class CMS_Workflow {
 			wp_send_json_error( array( 'message' => __( 'Failed to submit comment. Please try again.', 'campaign-mgmt' ) ) );
 		}
 
+		// Send email notification about the new comment.
+		$this->send_comment_notification( $post_id, $comment_id, $author, $email, $content );
+
 		// Send success response.
 		wp_send_json_success(
 			array(
@@ -403,5 +387,56 @@ class CMS_Workflow {
 				'comment_id' => $comment_id,
 			)
 		);
+	}
+
+	/**
+	 * Send notification email when a comment is posted
+	 *
+	 * @param int    $post_id Post ID.
+	 * @param int    $comment_id Comment ID.
+	 * @param string $author Comment author name.
+	 * @param string $author_email Comment author email.
+	 * @param string $content Comment content.
+	 */
+	private function send_comment_notification( $post_id, $comment_id, $author, $author_email, $content ) {
+		// Get the post.
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return;
+		}
+
+		// Get coordinator email.
+		$coordinator_email = get_option( 'cms_coordinator_email', get_option( 'admin_email' ) );
+
+		// Check if comment notifications are enabled.
+		$notify_on_comment = get_option( 'cms_notify_on_comment', 1 );
+		if ( ! $notify_on_comment ) {
+			return;
+		}
+
+		// Prepare email.
+		$subject = sprintf(
+			__( 'New Comment on Campaign Brief: %s', 'campaign-mgmt' ),
+			$post->post_title
+		);
+
+		$brief_url = get_permalink( $post_id );
+		$comment_url = $brief_url . '#comment-' . $comment_id;
+
+		$message = sprintf(
+			__( 'A new comment has been posted on the campaign brief "%s".', 'campaign-mgmt' ),
+			$post->post_title
+		) . "\n\n";
+
+		$message .= __( 'Author:', 'campaign-mgmt' ) . ' ' . $author . ' (' . $author_email . ')' . "\n\n";
+		$message .= __( 'Comment:', 'campaign-mgmt' ) . "\n" . $content . "\n\n";
+		$message .= __( 'View comment:', 'campaign-mgmt' ) . ' ' . $comment_url . "\n";
+		$message .= __( 'View brief:', 'campaign-mgmt' ) . ' ' . $brief_url . "\n\n";
+		$message .= '---' . "\n";
+		$message .= sprintf( __( 'Posted on %s', 'campaign-mgmt' ), date( 'F j, Y \a\t g:i a' ) );
+
+		// Send email.
+		$headers = array( 'Content-Type: text/plain; charset=UTF-8' );
+		wp_mail( $coordinator_email, $subject, $message, $headers );
 	}
 }
