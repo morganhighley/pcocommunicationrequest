@@ -1,0 +1,383 @@
+/**
+ * Public Styles for Campaign Brief Viewing
+ *
+ * @package CampaignManagementSystem
+ */
+
+/* Container */
+.cms-brief-container {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 20px;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+}
+
+/* Page Structure */
+.cms-brief-page {
+	background: #fff;
+	padding: 40px;
+	margin-bottom: 40px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	page-break-after: always;
+	position: relative;
+}
+
+.cms-page-number {
+	position: absolute;
+	bottom: 20px;
+	right: 50%;
+	transform: translateX(50%);
+	font-size: 14px;
+	color: #666;
+}
+
+/* Header */
+.cms-brief-header {
+	font-size: 28px;
+	font-weight: 700;
+	text-transform: uppercase;
+	margin: 0 0 10px 0;
+	padding-bottom: 10px;
+	border-bottom: 2px solid #000;
+}
+
+.cms-ministry-label {
+	font-size: 24px;
+	font-weight: 400;
+}
+
+.cms-section-title {
+	font-size: 20px;
+	font-weight: 700;
+	text-transform: uppercase;
+	margin: 30px 0 20px 0;
+	letter-spacing: 1px;
+}
+
+.cms-subsection-title {
+	font-size: 18px;
+	font-weight: 700;
+	text-transform: uppercase;
+	margin: 20px 0 10px 0;
+}
+
+/* Service Level Colors */
+.service-green .cms-brief-header {
+	border-bottom-color: #7cb342;
+}
+
+.service-blue .cms-brief-header {
+	border-bottom-color: #42a5f5;
+}
+
+.service-black .cms-brief-header {
+	border-bottom-color: #424242;
+}
+
+/* Tables */
+.cms-info-table,
+.cms-content-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin-bottom: 20px;
+}
+
+.cms-info-table td,
+.cms-content-table td {
+	padding: 12px 15px;
+	border: 1px solid #ddd;
+	vertical-align: top;
+}
+
+.cms-info-table .cms-label,
+.cms-content-table .cms-label {
+	font-weight: 600;
+	width: 30%;
+	background: #f5f5f5;
+}
+
+.cms-info-table .cms-value,
+.cms-content-table .cms-value {
+	width: 70%;
+}
+
+/* Service level row highlighting */
+.cms-info-table tr.service-green td {
+	background: #c5e1a5;
+}
+
+.cms-info-table tr.service-blue td {
+	background: #90caf9;
+}
+
+.cms-info-table tr.service-black td {
+	background: #757575;
+	color: #fff;
+}
+
+/* Channel Plan Table */
+.cms-channel-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin-top: 20px;
+}
+
+.cms-channel-table th {
+	background: #f5f5f5;
+	padding: 12px 15px;
+	text-align: left;
+	font-weight: 700;
+	text-transform: uppercase;
+	font-size: 12px;
+	border: 1px solid #ddd;
+}
+
+.cms-channel-table td {
+	padding: 10px 15px;
+	border: 1px solid #ddd;
+	vertical-align: top;
+}
+
+.cms-channel-table.service-green th {
+	background: #c5e1a5;
+	border-left: 5px solid #7cb342;
+}
+
+.cms-channel-table.service-blue th {
+	background: #90caf9;
+	border-left: 5px solid #42a5f5;
+}
+
+.cms-channel-table.service-black th {
+	background: #757575;
+	color: #fff;
+	border-left: 5px solid #424242;
+}
+
+.cms-channel-table .promo-period-row td {
+	background: #f9f9f9;
+	font-weight: 600;
+	text-align: center;
+}
+
+/* Additional Content */
+.cms-additional-content {
+	min-height: 300px;
+	padding: 20px;
+	border: 1px solid #ddd;
+	background: #fafafa;
+}
+
+.cms-visual-content {
+	padding: 20px;
+	background: #f9f9f9;
+	border: 1px solid #ddd;
+	min-height: 200px;
+	white-space: pre-wrap;
+	word-wrap: break-word;
+}
+
+/* Actions */
+.cms-brief-actions {
+	text-align: right;
+	margin-bottom: 20px;
+}
+
+.cms-button {
+	display: inline-block;
+	padding: 10px 20px;
+	margin: 0 5px;
+	font-size: 14px;
+	font-weight: 600;
+	text-decoration: none;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+	transition: all 0.3s ease;
+}
+
+.cms-button-primary {
+	background: #0073aa;
+	color: #fff;
+}
+
+.cms-button-primary:hover {
+	background: #005a87;
+	color: #fff;
+}
+
+.cms-button-secondary {
+	background: #f0f0f0;
+	color: #333;
+	border: 1px solid #ddd;
+}
+
+.cms-button-secondary:hover {
+	background: #e0e0e0;
+}
+
+/* Acceptance Banner */
+.cms-acceptance-banner {
+	padding: 15px 20px;
+	margin-bottom: 30px;
+	border-radius: 4px;
+	text-align: center;
+	font-size: 16px;
+}
+
+.cms-acceptance-banner.service-green {
+	background: #c5e1a5;
+	border: 2px solid #7cb342;
+}
+
+.cms-acceptance-banner.service-blue {
+	background: #90caf9;
+	border: 2px solid #42a5f5;
+}
+
+.cms-acceptance-banner.service-black {
+	background: #757575;
+	color: #fff;
+	border: 2px solid #424242;
+}
+
+/* Modal */
+.cms-modal {
+	position: fixed;
+	z-index: 999999;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	overflow: auto;
+	background-color: rgba(0, 0, 0, 0.5);
+}
+
+.cms-modal-content {
+	background-color: #fff;
+	margin: 10% auto;
+	padding: 30px;
+	border: 1px solid #888;
+	width: 90%;
+	max-width: 500px;
+	border-radius: 8px;
+	position: relative;
+}
+
+.cms-modal-close {
+	position: absolute;
+	right: 15px;
+	top: 10px;
+	color: #aaa;
+	font-size: 32px;
+	font-weight: bold;
+	cursor: pointer;
+}
+
+.cms-modal-close:hover,
+.cms-modal-close:focus {
+	color: #000;
+}
+
+.cms-modal-content h2 {
+	margin-top: 0;
+}
+
+.cms-modal-content form p {
+	margin-bottom: 15px;
+}
+
+.cms-modal-content label {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 5px;
+}
+
+.cms-modal-content input[type="text"],
+.cms-modal-content input[type="email"] {
+	width: 100%;
+	padding: 8px 12px;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	font-size: 14px;
+}
+
+.cms-modal-content .widefat {
+	width: 100%;
+}
+
+/* Comments Section */
+.cms-comments-section {
+	margin-top: 60px;
+	padding: 30px;
+	background: #f9f9f9;
+	border-top: 3px solid #0073aa;
+}
+
+.cms-comments-section h2 {
+	margin-top: 0;
+	font-size: 24px;
+	color: #333;
+}
+
+/* Print Styles */
+@media print {
+	.no-print {
+		display: none !important;
+	}
+
+	.cms-brief-page {
+		box-shadow: none;
+		margin-bottom: 0;
+		page-break-after: always;
+	}
+
+	.cms-page-5 {
+		page-break-after: auto;
+	}
+
+	body {
+		background: #fff;
+	}
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+	.cms-brief-container {
+		padding: 10px;
+	}
+
+	.cms-brief-page {
+		padding: 20px;
+	}
+
+	.cms-info-table .cms-label,
+	.cms-content-table .cms-label {
+		width: 100%;
+		display: block;
+	}
+
+	.cms-info-table .cms-value,
+	.cms-content-table .cms-value {
+		width: 100%;
+		display: block;
+	}
+
+	.cms-brief-header {
+		font-size: 20px;
+	}
+
+	.cms-ministry-label {
+		display: block;
+		font-size: 16px;
+		margin-top: 5px;
+	}
+}
+
+/* Description text */
+.cms-description {
+	font-size: 14px;
+	color: #666;
+	font-style: italic;
+	margin: 10px 0;
+}
