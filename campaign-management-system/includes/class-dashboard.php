@@ -78,15 +78,27 @@ class CMS_Dashboard {
 	 * @return array Array of comment objects.
 	 */
 	private function get_recent_comments( $limit = 10 ) {
-		$args = array(
-			'post_type'   => 'campaign_brief',
-			'status'      => 'approve',
-			'number'      => $limit,
-			'orderby'     => 'comment_date',
-			'order'       => 'DESC',
-		);
+		// First, get all campaign_brief post IDs
+		$brief_ids = get_posts( array(
+			'post_type'      => 'campaign_brief',
+			'posts_per_page' => -1,
+			'fields'         => 'ids',
+			'post_status'    => array( 'publish', 'draft', 'pending_acceptance', 'accepted', 'archived' ),
+		));
 
-		$comments = get_comments( $args );
+		if ( empty( $brief_ids ) ) {
+			return array();
+		}
+
+		// Then get comments for those posts
+		$comments = get_comments( array(
+			'post__in'  => $brief_ids,
+			'status'    => 'approve',
+			'number'    => $limit,
+			'orderby'   => 'comment_date',
+			'order'     => 'DESC',
+		));
+
 		return $comments;
 	}
 
@@ -97,21 +109,9 @@ class CMS_Dashboard {
 	 * @return int
 	 */
 	private function get_count_by_status( $status ) {
-		// Use WP_Query with count_posts for more reliable counting.
-		// This respects WordPress filters and hooks.
-		$args = array(
-			'post_type'      => 'campaign_brief',
-			'post_status'    => $status,
-			'posts_per_page' => -1,
-			'fields'         => 'ids',
-			'no_found_rows'  => false,
-		);
-
-		$query = new WP_Query( $args );
-		$count = $query->found_posts;
-		wp_reset_postdata();
-
-		return absint( $count );
+		// Use wp_count_posts() for more reliable counting of custom post statuses
+		$counts = wp_count_posts( 'campaign_brief' );
+		return isset( $counts->$status ) ? absint( $counts->$status ) : 0;
 	}
 
 	/**

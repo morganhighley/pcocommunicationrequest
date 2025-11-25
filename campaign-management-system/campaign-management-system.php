@@ -222,6 +222,14 @@ class Campaign_Management_System {
 		add_option( 'cms_version', CMS_VERSION );
 		add_option( 'cms_installed_date', current_time( 'mysql' ) );
 
+		// Set default notification options (only if they don't exist)
+		if ( get_option( 'cms_notify_on_comment' ) === false ) {
+			add_option( 'cms_notify_on_comment', 1 );
+		}
+		if ( get_option( 'cms_notify_on_status_change' ) === false ) {
+			add_option( 'cms_notify_on_status_change', 1 );
+		}
+
 		// Add admin notice to manually flush permalinks.
 		set_transient( 'cms_flush_permalink_notice', true, 300 );
 	}

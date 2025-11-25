@@ -402,15 +402,30 @@ class CMS_Workflow {
 		// Get the post.
 		$post = get_post( $post_id );
 		if ( ! $post ) {
+			error_log( 'CMS: Cannot send comment notification - post not found: ' . $post_id );
 			return;
 		}
 
 		// Get coordinator email.
-		$coordinator_email = get_option( 'cms_coordinator_email', get_option( 'admin_email' ) );
+		$coordinator_email = get_option( 'cms_coordinator_email' );
+		if ( empty( $coordinator_email ) ) {
+			$coordinator_email = get_option( 'admin_email' );
+		}
 
-		// Check if comment notifications are enabled.
-		$notify_on_comment = get_option( 'cms_notify_on_comment', 1 );
+		if ( empty( $coordinator_email ) ) {
+			error_log( 'CMS: Cannot send comment notification - no coordinator email configured' );
+			return;
+		}
+
+		// Check if comment notifications are enabled (default to enabled if not set).
+		$notify_on_comment = get_option( 'cms_notify_on_comment' );
+		if ( $notify_on_comment === false ) {
+			// Option not set, default to enabled
+			$notify_on_comment = 1;
+		}
+
 		if ( ! $notify_on_comment ) {
+			error_log( 'CMS: Comment notifications disabled in settings' );
 			return;
 		}
 
@@ -422,6 +437,7 @@ class CMS_Workflow {
 
 		$brief_url = get_permalink( $post_id );
 		$comment_url = $brief_url . '#comment-' . $comment_id;
+		$admin_url = admin_url( 'post.php?post=' . $post_id . '&action=edit' );
 
 		$message = sprintf(
 			__( 'A new comment has been posted on the campaign brief "%s".', 'campaign-mgmt' ),
@@ -431,12 +447,19 @@ class CMS_Workflow {
 		$message .= __( 'Author:', 'campaign-mgmt' ) . ' ' . $author . ' (' . $author_email . ')' . "\n\n";
 		$message .= __( 'Comment:', 'campaign-mgmt' ) . "\n" . $content . "\n\n";
 		$message .= __( 'View comment:', 'campaign-mgmt' ) . ' ' . $comment_url . "\n";
+		$message .= __( 'Edit brief:', 'campaign-mgmt' ) . ' ' . $admin_url . "\n";
 		$message .= __( 'View brief:', 'campaign-mgmt' ) . ' ' . $brief_url . "\n\n";
 		$message .= '---' . "\n";
 		$message .= sprintf( __( 'Posted on %s', 'campaign-mgmt' ), date( 'F j, Y \a\t g:i a' ) );
 
-		// Send email.
+		// Send email with error logging.
 		$headers = array( 'Content-Type: text/plain; charset=UTF-8' );
-		wp_mail( $coordinator_email, $subject, $message, $headers );
+		$sent = wp_mail( $coordinator_email, $subject, $message, $headers );
+
+		if ( ! $sent ) {
+			error_log( 'CMS: Failed to send comment notification email to: ' . $coordinator_email );
+		} else {
+			error_log( 'CMS: Comment notification sent successfully to: ' . $coordinator_email );
+		}
 	}
 }

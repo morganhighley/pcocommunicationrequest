@@ -266,7 +266,12 @@ class CMS_Settings {
 	 * Notify on comment callback
 	 */
 	public function notify_on_comment_callback() {
-		$value = get_option( 'cms_notify_on_comment', 1 );
+		// Ensure default is set if option doesn't exist
+		$value = get_option( 'cms_notify_on_comment' );
+		if ( $value === false ) {
+			update_option( 'cms_notify_on_comment', 1 );
+			$value = 1;
+		}
 		?>
 		<label>
 			<input type="checkbox" name="cms_notify_on_comment" value="1" <?php checked( $value, 1 ); ?> />
