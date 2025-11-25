@@ -24,6 +24,8 @@ class CMS_Post_Type {
 		add_action( 'init', array( $this, 'register_post_status' ) );
 		add_filter( 'template_include', array( $this, 'load_template' ) );
 		add_filter( 'single_template', array( $this, 'single_template' ) );
+		add_filter( 'wp_insert_post_data', array( $this, 'enable_comments_on_insert' ), 10, 2 );
+		add_action( 'save_post_campaign_brief', array( $this, 'ensure_comments_open' ), 10, 2 );
 	}
 
 	/**
@@ -272,5 +274,46 @@ class CMS_Post_Type {
 		}
 
 		return $template;
+	}
+
+	/**
+	 * Enable comments on new campaign briefs
+	 *
+	 * @param array $data Post data array.
+	 * @param array $postarr Original post data.
+	 * @return array Modified post data.
+	 */
+	public function enable_comments_on_insert( $data, $postarr ) {
+		if ( 'campaign_brief' === $data['post_type'] ) {
+			$data['comment_status'] = 'open';
+			$data['ping_status'] = 'closed';
+		}
+		return $data;
+	}
+
+	/**
+	 * Ensure comments are open on campaign briefs
+	 *
+	 * @param int     $post_id Post ID.
+	 * @param WP_Post $post Post object.
+	 */
+	public function ensure_comments_open( $post_id, $post ) {
+		// Skip if this is an autosave or revision.
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+			return;
+		}
+
+		// Check if comments are closed, and open them.
+		if ( 'closed' === $post->comment_status ) {
+			remove_action( 'save_post_campaign_brief', array( $this, 'ensure_comments_open' ), 10 );
+			wp_update_post(
+				array(
+					'ID'             => $post_id,
+					'comment_status' => 'open',
+					'ping_status'    => 'closed',
+				)
+			);
+			add_action( 'save_post_campaign_brief', array( $this, 'ensure_comments_open' ), 10, 2 );
+		}
 	}
 }

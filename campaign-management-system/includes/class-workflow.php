@@ -64,6 +64,9 @@ class CMS_Workflow {
 		// Send notification to communications team.
 		$this->send_acceptance_notification( $post_id, $acceptor_name, $acceptor_email );
 
+		// Try to create Planning Center task.
+		$this->create_planning_center_task( $post_id, $acceptor_email );
+
 		wp_send_json_success(
 			array(
 				'message' => __( 'Brief accepted successfully!', 'campaign-mgmt' ),
@@ -298,6 +301,43 @@ class CMS_Workflow {
 			$location = add_query_arg( 'comment_success', '1', get_permalink( $post->ID ) . '#comments' );
 		}
 		return $location;
+	}
+
+	/**
+	 * Create Planning Center task for accepted brief
+	 *
+	 * @param int    $post_id Post ID.
+	 * @param string $assignee_email Email of person to assign task to.
+	 */
+	private function create_planning_center_task( $post_id, $assignee_email ) {
+		// Only attempt if API is configured.
+		$app_id = get_option( 'cms_pc_app_id', '' );
+		$secret = get_option( 'cms_pc_secret', '' );
+
+		if ( empty( $app_id ) || empty( $secret ) ) {
+			error_log( 'CMS: Planning Center API not configured. Skipping task creation.' );
+			return;
+		}
+
+		// Load Planning Center API class if not already loaded.
+		if ( ! class_exists( 'CMS_API_Planning_Center' ) ) {
+			require_once CMS_PLUGIN_DIR . 'includes/class-api-planning-center.php';
+		}
+
+		$pc_api = new CMS_API_Planning_Center();
+		$result = $pc_api->create_acceptance_task( $post_id, $assignee_email );
+
+		if ( is_wp_error( $result ) ) {
+			// Task creation failed - this is expected if Tasks API is not available yet.
+			// Error is already logged by the API class.
+			update_post_meta( $post_id, '_cms_pc_task_status', 'failed' );
+			update_post_meta( $post_id, '_cms_pc_task_error', $result->get_error_message() );
+		} else {
+			// Task created successfully!
+			update_post_meta( $post_id, '_cms_pc_task_status', 'created' );
+			delete_post_meta( $post_id, '_cms_pc_task_error' );
+			error_log( 'CMS: Planning Center task created successfully for brief ' . $post_id );
+		}
 	}
 
 	/**

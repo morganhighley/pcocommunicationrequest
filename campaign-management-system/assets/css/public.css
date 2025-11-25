@@ -269,14 +269,26 @@
 	right: 15px;
 	top: 10px;
 	color: #aaa;
-	font-size: 32px;
-	font-weight: bold;
+	font-size: 28px;
+	font-weight: normal;
+	line-height: 1;
 	cursor: pointer;
+	width: 30px;
+	height: 30px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: transparent;
+	border: none;
+	padding: 0;
+	z-index: 10;
 }
 
 .cms-modal-close:hover,
 .cms-modal-close:focus {
 	color: #000;
+	background-color: #f0f0f0;
+	border-radius: 3px;
 }
 
 .cms-modal-content h2 {
@@ -356,11 +368,46 @@
 	.cms-brief-page {
 		box-shadow: none;
 		margin-bottom: 0;
+		padding: 30px;
 		page-break-after: always;
+		page-break-inside: avoid;
 	}
 
 	.cms-page-5 {
 		page-break-after: auto;
+	}
+
+	/* Prevent page breaks in key sections */
+	.cms-brief-header,
+	.cms-section-title,
+	.cms-info-table,
+	.cms-content-table {
+		page-break-inside: avoid;
+	}
+
+	/* Keep page 1 compact to fit on one page */
+	.cms-page-1 {
+		padding: 20px 30px;
+	}
+
+	.cms-page-1 .cms-brief-header {
+		font-size: 24px;
+		margin-bottom: 8px;
+		padding-bottom: 8px;
+	}
+
+	.cms-page-1 .cms-section-title {
+		font-size: 18px;
+		margin: 15px 0 10px 0;
+	}
+
+	.cms-page-1 .cms-info-table td {
+		padding: 8px 12px;
+		font-size: 13px;
+	}
+
+	.cms-page-1 .cms-info-table {
+		margin-bottom: 12px;
 	}
 
 	body {
@@ -371,6 +418,10 @@
 		max-width: 100%;
 		margin: 0;
 		padding: 0;
+	}
+
+	.cms-page-number {
+		font-size: 12px;
 	}
 }
 
