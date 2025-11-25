@@ -95,17 +95,17 @@ class CMS_Workflow {
 		delete_post_meta( $post_id, '_cms_accepted_by' );
 		delete_post_meta( $post_id, '_cms_accepted_date' );
 
-		// Change status back to draft.
+		// Change status back to pending_acceptance so ministry leader can re-review.
 		wp_update_post(
 			array(
 				'ID'          => $post_id,
-				'post_status' => 'draft',
+				'post_status' => 'pending_acceptance',
 			)
 		);
 
 		wp_send_json_success(
 			array(
-				'message' => __( 'Brief unlocked and acceptance cleared. You can now make changes and have the brief re-accepted.', 'campaign-mgmt' ),
+				'message' => __( 'Brief unlocked and acceptance cleared. Status changed to Pending Acceptance. You can now make changes and have the brief re-accepted.', 'campaign-mgmt' ),
 			)
 		);
 	}
@@ -131,9 +131,17 @@ class CMS_Workflow {
 		delete_post_meta( $post_id, '_cms_accepted_by' );
 		delete_post_meta( $post_id, '_cms_accepted_date' );
 
+		// Change status back to pending_acceptance so it appears in the correct dashboard view.
+		wp_update_post(
+			array(
+				'ID'          => $post_id,
+				'post_status' => 'pending_acceptance',
+			)
+		);
+
 		wp_send_json_success(
 			array(
-				'message' => __( 'Acceptance status cleared. Brief can now be re-accepted.', 'campaign-mgmt' ),
+				'message' => __( 'Acceptance status cleared. Brief status changed to Pending Acceptance.', 'campaign-mgmt' ),
 			)
 		);
 	}

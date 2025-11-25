@@ -421,21 +421,25 @@
 }
 
 .cms-comments-title {
-	font-size: 20px;
-	margin-bottom: 20px;
+	font-size: 22px;
+	margin-bottom: 25px;
 	color: #333;
+	font-weight: 700;
 }
 
 .cms-comment-list {
 	list-style: none;
-	margin: 0;
+	margin: 0 0 40px 0;
 	padding: 0;
 }
 
 .cms-comment-list li {
-	margin-bottom: 20px;
-	padding-bottom: 20px;
-	border-bottom: 1px solid #eee;
+	margin-bottom: 25px;
+	padding: 20px;
+	background: #fff;
+	border: 1px solid #e0e0e0;
+	border-radius: 6px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .cms-comment-body {
@@ -446,12 +450,13 @@
 .cms-comment-author {
 	display: flex;
 	align-items: center;
-	margin-bottom: 10px;
+	margin-bottom: 12px;
 }
 
 .cms-comment-author img {
 	border-radius: 50%;
 	margin-right: 15px;
+	border: 2px solid #e0e0e0;
 }
 
 .cms-comment-meta {
@@ -462,68 +467,101 @@
 .cms-comment-meta strong {
 	font-size: 16px;
 	color: #333;
+	font-weight: 600;
 }
 
 .cms-comment-meta time {
 	font-size: 13px;
 	color: #999;
+	margin-top: 2px;
 }
 
 .cms-comment-content {
 	padding-left: 65px;
 	color: #555;
-	line-height: 1.6;
+	line-height: 1.7;
+	font-size: 15px;
 }
 
 .cms-comment-form-wrapper {
 	margin-top: 40px;
-	padding: 30px;
-	background: #f9f9f9;
+	padding: 35px;
+	background: #fff;
+	border: 2px solid #0073aa;
 	border-radius: 8px;
+	box-shadow: 0 2px 8px rgba(0, 115, 170, 0.1);
 }
 
 .cms-comment-form-wrapper h3 {
 	margin-top: 0;
-	color: #333;
+	margin-bottom: 10px;
+	color: #0073aa;
+	font-size: 22px;
+	font-weight: 700;
 }
 
 .cms-comment-notes {
 	font-size: 14px;
 	color: #666;
-	margin-bottom: 20px;
+	margin-bottom: 25px;
+	line-height: 1.5;
+}
+
+.cms-comment-form {
+	display: grid;
+	gap: 20px;
 }
 
 .cms-form-field {
-	margin-bottom: 20px;
+	margin-bottom: 0;
 }
 
 .cms-form-field label {
 	display: block;
 	font-weight: 600;
-	margin-bottom: 8px;
+	margin-bottom: 10px;
 	color: #333;
+	font-size: 15px;
 }
 
 .cms-form-field input[type="text"],
 .cms-form-field input[type="email"],
 .cms-form-field textarea {
 	width: 100%;
-	padding: 12px;
-	border: 1px solid #ddd;
-	border-radius: 4px;
-	font-size: 14px;
+	padding: 14px 16px;
+	border: 2px solid #ddd;
+	border-radius: 6px;
+	font-size: 15px;
 	font-family: inherit;
-	transition: border-color 0.3s ease;
+	transition: all 0.3s ease;
+	box-sizing: border-box;
+	background-color: #fff;
+	line-height: 1.5;
 }
 
 .cms-form-field input:focus,
 .cms-form-field textarea:focus {
 	outline: none;
 	border-color: #0073aa;
+	box-shadow: 0 0 0 3px rgba(0, 115, 170, 0.1);
+}
+
+.cms-form-field textarea {
+	min-height: 140px;
+	resize: vertical;
 }
 
 .cms-form-actions {
-	margin-top: 20px;
+	margin-top: 10px;
+	display: flex;
+	align-items: center;
+	gap: 15px;
+}
+
+.cms-button.cms-button-primary {
+	padding: 14px 32px;
+	font-size: 16px;
+	font-weight: 600;
 }
 
 .cms-comments-closed {
@@ -533,4 +571,45 @@
 	background: #f9f9f9;
 	border-radius: 4px;
 	text-align: center;
+}
+
+#cms-comment-response {
+	margin-top: 20px;
+}
+
+#cms-comment-response .cms-comment-success,
+#cms-comment-response .cms-comment-error {
+	padding: 16px 20px;
+	border-radius: 6px;
+	font-size: 15px;
+	line-height: 1.5;
+}
+
+/* Responsive adjustments for comment form */
+@media (max-width: 768px) {
+	.cms-comment-form-wrapper {
+		padding: 25px 20px;
+	}
+
+	.cms-form-field input[type="text"],
+	.cms-form-field input[type="email"],
+	.cms-form-field textarea {
+		padding: 12px 14px;
+		font-size: 14px;
+	}
+
+	.cms-comment-content {
+		padding-left: 0;
+		margin-top: 10px;
+	}
+
+	.cms-form-actions {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.cms-button.cms-button-primary {
+		width: 100%;
+		text-align: center;
+	}
 }
