@@ -393,11 +393,11 @@ class CMS_Meta_Boxes {
 			<?php if ( $is_locked ) : ?>
 				<div class="notice notice-warning inline" style="margin: 0 0 15px 0;">
 					<p><strong><?php esc_html_e( '🔒 This brief is locked', 'campaign-mgmt' ); ?></strong><br>
-					<?php esc_html_e( 'Editing will require re-acceptance from ministry leader.', 'campaign-mgmt' ); ?></p>
+					<?php esc_html_e( 'Unlocking will clear acceptance and require ministry leader to re-accept after editing.', 'campaign-mgmt' ); ?></p>
 				</div>
 				<p>
 					<button type="button" class="button button-large button-secondary" id="cms-unlock-brief" style="width: 100%; text-align: center;">
-						<?php esc_html_e( '🔓 Unlock Brief', 'campaign-mgmt' ); ?>
+						<?php esc_html_e( '🔓 Unlock & Clear Acceptance', 'campaign-mgmt' ); ?>
 					</button>
 				</p>
 			<?php else : ?>
@@ -405,12 +405,19 @@ class CMS_Meta_Boxes {
 					<strong><?php esc_html_e( 'Status:', 'campaign-mgmt' ); ?></strong>
 					<?php
 					if ( $accepted_by ) {
-						esc_html_e( 'Brief was accepted and unlocked for editing.', 'campaign-mgmt' );
+						esc_html_e( 'Brief was accepted but is now unlocked. Ministry leader should re-accept after final review.', 'campaign-mgmt' );
 					} else {
-						esc_html_e( 'Brief is not locked. You can edit freely.', 'campaign-mgmt' );
+						esc_html_e( 'Brief has not been accepted yet. Share the link with ministry leader for review and acceptance.', 'campaign-mgmt' );
 					}
 					?>
 				</p>
+				<?php if ( $accepted_by ) : ?>
+					<p>
+						<button type="button" class="button button-secondary" id="cms-unaccept-brief" style="width: 100%; text-align: center;">
+							<?php esc_html_e( 'Clear Acceptance Status', 'campaign-mgmt' ); ?>
+						</button>
+					</p>
+				<?php endif; ?>
 			<?php endif; ?>
 
 			<input type="hidden" id="cms_is_locked" name="cms_is_locked" value="<?php echo esc_attr( $is_locked ); ?>" />
