@@ -403,64 +403,77 @@ class CMS_Workflow {
 		// Get the post.
 		$post = get_post( $post_id );
 		if ( ! $post ) {
-			error_log( 'CMS: Cannot send comment notification - post not found: ' . $post_id );
+			error_log( 'CMS Comment Notification: Post not found - ID: ' . $post_id );
 			return;
 		}
 
-		// Get coordinator email.
+		// Get coordinator email from settings
 		$coordinator_email = get_option( 'cms_coordinator_email' );
 		if ( empty( $coordinator_email ) ) {
 			$coordinator_email = get_option( 'admin_email' );
 		}
 
 		if ( empty( $coordinator_email ) ) {
-			error_log( 'CMS: Cannot send comment notification - no coordinator email configured' );
+			error_log( 'CMS Comment Notification: No coordinator email configured' );
 			return;
 		}
 
-		// Check if comment notifications are enabled (default to enabled if not set).
+		// Check if comment notifications are enabled
+		// Default to true if option doesn't exist
 		$notify_on_comment = get_option( 'cms_notify_on_comment' );
-		if ( $notify_on_comment === false ) {
-			// Option not set, default to enabled
+		if ( $notify_on_comment === false || $notify_on_comment === '' ) {
+			// Option not set, default to enabled and save it
+			update_option( 'cms_notify_on_comment', 1 );
 			$notify_on_comment = 1;
 		}
 
 		if ( ! $notify_on_comment ) {
-			error_log( 'CMS: Comment notifications disabled in settings' );
+			error_log( 'CMS Comment Notification: Notifications disabled in settings' );
 			return;
 		}
 
-		// Prepare email.
+		// Prepare email
 		$subject = sprintf(
-			__( 'New Comment on Campaign Brief: %s', 'campaign-mgmt' ),
+			'[Campaign Brief] New message on: %s',
 			$post->post_title
 		);
 
 		$brief_url = get_permalink( $post_id );
-		$comment_url = $brief_url . '#comment-' . $comment_id;
 		$admin_url = admin_url( 'post.php?post=' . $post_id . '&action=edit' );
 
-		$message = sprintf(
-			__( 'A new comment has been posted on the campaign brief "%s".', 'campaign-mgmt' ),
-			$post->post_title
-		) . "\n\n";
+		$message = "New feedback received on a campaign brief.\n\n";
+		$message .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+		$message .= "Brief: " . $post->post_title . "\n";
+		$message .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+		$message .= "From: " . $author . " (" . $author_email . ")\n";
+		$message .= "Date: " . date( 'F j, Y \a\t g:i a' ) . "\n\n";
+		$message .= "Message:\n";
+		$message .= "─────────────────────────────────────────\n";
+		$message .= $content . "\n";
+		$message .= "─────────────────────────────────────────\n\n";
+		$message .= "View brief: " . $brief_url . "#cms-chat\n";
+		$message .= "Edit brief: " . $admin_url . "\n\n";
+		$message .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+		$message .= "This notification was sent by the Campaign Management System.";
 
-		$message .= __( 'Author:', 'campaign-mgmt' ) . ' ' . $author . ' (' . $author_email . ')' . "\n\n";
-		$message .= __( 'Comment:', 'campaign-mgmt' ) . "\n" . $content . "\n\n";
-		$message .= __( 'View comment:', 'campaign-mgmt' ) . ' ' . $comment_url . "\n";
-		$message .= __( 'Edit brief:', 'campaign-mgmt' ) . ' ' . $admin_url . "\n";
-		$message .= __( 'View brief:', 'campaign-mgmt' ) . ' ' . $brief_url . "\n\n";
-		$message .= '---' . "\n";
-		$message .= sprintf( __( 'Posted on %s', 'campaign-mgmt' ), date( 'F j, Y \a\t g:i a' ) );
+		// Set headers
+		$headers = array(
+			'Content-Type: text/plain; charset=UTF-8',
+			'Reply-To: ' . $author . ' <' . $author_email . '>',
+		);
 
-		// Send email with error logging.
-		$headers = array( 'Content-Type: text/plain; charset=UTF-8' );
+		// Send email
 		$sent = wp_mail( $coordinator_email, $subject, $message, $headers );
 
-		if ( ! $sent ) {
-			error_log( 'CMS: Failed to send comment notification email to: ' . $coordinator_email );
+		if ( $sent ) {
+			error_log( 'CMS Comment Notification: Email sent successfully to ' . $coordinator_email );
 		} else {
-			error_log( 'CMS: Comment notification sent successfully to: ' . $coordinator_email );
+			error_log( 'CMS Comment Notification: Failed to send email to ' . $coordinator_email );
+			// Log additional debug info
+			global $phpmailer;
+			if ( isset( $phpmailer ) && is_object( $phpmailer ) ) {
+				error_log( 'CMS Comment Notification: PHPMailer error: ' . $phpmailer->ErrorInfo );
+			}
 		}
 	}
 }

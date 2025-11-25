@@ -5,180 +5,298 @@
  */
 
 (function($) {
-	'use strict';
+    'use strict';
 
-	$(document).ready(function() {
-		// Accept Brief Modal
-		var modal = $('#cms-accept-modal');
-		var btn = $('#cms-accept-brief-btn');
-		var closeButtons = $('.cms-modal-close');
+    $(document).ready(function() {
 
-		// Open modal
-		btn.on('click', function() {
-			modal.fadeIn();
-		});
+        // ============================================
+        // ACCEPT BRIEF MODAL
+        // ============================================
 
-		// Close modal
-		closeButtons.on('click', function() {
-			modal.fadeOut();
-		});
+        var modal = $('#cms-accept-modal');
+        var btn = $('#cms-accept-brief-btn');
+        var closeButtons = $('.cms-modal-close');
 
-		// Close modal when clicking outside
-		$(window).on('click', function(event) {
-			if (event.target == modal[0]) {
-				modal.fadeOut();
-			}
-		});
+        // Open modal
+        btn.on('click', function() {
+            modal.fadeIn();
+        });
 
-		// Handle accept form submission
-		$('#cms-accept-form').on('submit', function(e) {
-			e.preventDefault();
+        // Close modal
+        closeButtons.on('click', function() {
+            modal.fadeOut();
+        });
 
-			var $form = $(this);
-			var $submitBtn = $form.find('button[type="submit"]');
-			var originalText = $submitBtn.text();
+        // Close modal when clicking outside
+        $(window).on('click', function(event) {
+            if (event.target == modal[0]) {
+                modal.fadeOut();
+            }
+        });
 
-			// Disable submit button
-			$submitBtn.prop('disabled', true).text('Accepting...');
+        // Handle accept form submission
+        $('#cms-accept-form').on('submit', function(e) {
+            e.preventDefault();
 
-			// Get form data
-			var formData = {
-				action: 'cms_accept_brief',
-				nonce: cmsPublic.nonce,
-				post_id: getPostId(),
-				acceptor_name: $('#acceptor_name').val(),
-				acceptor_email: $('#acceptor_email').val()
-			};
+            var $form = $(this);
+            var $submitBtn = $form.find('button[type="submit"]');
+            var originalText = $submitBtn.text();
 
-			// Submit via AJAX
-			$.post(cmsPublic.ajaxUrl, formData)
-				.done(function(response) {
-					if (response.success) {
-						// Show success message
-						alert(response.data.message);
+            // Disable submit button
+            $submitBtn.prop('disabled', true).text('Accepting...');
 
-						// Reload page to show acceptance status
-						location.reload();
-					} else {
-						alert('Error: ' + response.data.message);
-						$submitBtn.prop('disabled', false).text(originalText);
-					}
-				})
-				.fail(function() {
-					alert('An error occurred. Please try again.');
-					$submitBtn.prop('disabled', false).text(originalText);
-				});
-		});
+            // Get form data
+            var formData = {
+                action: 'cms_accept_brief',
+                nonce: cmsPublic.nonce,
+                post_id: getPostId(),
+                acceptor_name: $('#acceptor_name').val(),
+                acceptor_email: $('#acceptor_email').val()
+            };
 
-		// Copy shareable link (if on admin side)
-		$('#cms-copy-link').on('click', function() {
-			var $input = $('#cms-share-url');
-			$input.select();
-			document.execCommand('copy');
+            // Submit via AJAX
+            $.post(cmsPublic.ajaxUrl, formData)
+                .done(function(response) {
+                    if (response.success) {
+                        alert(response.data.message);
+                        location.reload();
+                    } else {
+                        alert('Error: ' + response.data.message);
+                        $submitBtn.prop('disabled', false).text(originalText);
+                    }
+                })
+                .fail(function() {
+                    alert('An error occurred. Please try again.');
+                    $submitBtn.prop('disabled', false).text(originalText);
+                });
+        });
 
-			var $btn = $(this);
-			var originalText = $btn.text();
-			$btn.text('Copied!');
+        // ============================================
+        // CHAT/COMMENT SYSTEM
+        // ============================================
 
-			setTimeout(function() {
-				$btn.text(originalText);
-			}, 2000);
-		});
+        var $chatForm = $('#cms-chat-form');
+        var $chatMessages = $('#cms-chat-messages');
+        var $chatResponse = $('#cms-chat-response');
+        var $submitBtn = $('#cms-chat-submit');
 
-		/**
-		 * Get current post ID from URL or body class
-		 */
-		function getPostId() {
-			// Try to get from URL parameter
-			var urlParams = new URLSearchParams(window.location.search);
-			var postId = urlParams.get('post');
+        // Scroll to bottom of chat on load
+        if ($chatMessages.length) {
+            scrollToBottom();
+        }
 
-			// If not in URL, try to get from body class
-			if (!postId) {
-				var bodyClasses = $('body').attr('class').split(' ');
-				for (var i = 0; i < bodyClasses.length; i++) {
-					if (bodyClasses[i].indexOf('postid-') === 0) {
-						postId = bodyClasses[i].replace('postid-', '');
-						break;
-					}
-				}
-			}
+        // Handle chat form submission
+        $chatForm.on('submit', function(e) {
+            e.preventDefault();
 
-			return postId;
-		}
+            var originalBtnHtml = $submitBtn.html();
+            var authorName = $('#cms_chat_author').val().trim();
+            var authorEmail = $('#cms_chat_email').val().trim();
+            var messageContent = $('#cms_chat_content').val().trim();
 
-		// Smooth scroll to comments
-		$('a[href="#comments"]').on('click', function(e) {
-			e.preventDefault();
-			$('html, body').animate({
-				scrollTop: $('.cms-comments-section').offset().top - 100
-			}, 500);
-		});
+            // Validate
+            if (!authorName || !authorEmail || !messageContent) {
+                showResponse('error', 'Please fill in all fields.');
+                return;
+            }
 
-		// Handle comment form submission via AJAX
-		$('#cms-comment-form').on('submit', function(e) {
-			e.preventDefault();
+            // Disable submit button
+            $submitBtn.prop('disabled', true).html('<span class="cms-chat-send-icon">⏳</span> <span class="cms-chat-send-text">Sending...</span>');
 
-			var $form = $(this);
-			var $submitBtn = $('#cms-submit-comment');
-			var $response = $('#cms-comment-response');
-			var originalText = $submitBtn.text();
+            // Get nonce from form
+            var nonce = $chatForm.find('input[name="cms_comment_nonce"]').val();
+            var postId = $chatForm.find('input[name="comment_post_ID"]').val();
 
-			// Clear previous messages
-			$response.hide().empty();
+            // Prepare form data
+            var formData = {
+                action: 'cms_submit_comment',
+                nonce: nonce,
+                comment_post_ID: postId,
+                author: authorName,
+                email: authorEmail,
+                comment: messageContent
+            };
 
-			// Disable submit button
-			$submitBtn.prop('disabled', true).text('Submitting...');
+            // Submit via AJAX
+            $.post(cmsPublic.ajaxUrl, formData)
+                .done(function(response) {
+                    if (response.success) {
+                        // Clear the message field only (keep name/email for convenience)
+                        $('#cms_chat_content').val('');
 
-			// Get form data
-			var formData = {
-				action: 'cms_submit_comment',
-				nonce: $form.find('input[name="cms_comment_nonce"]').val(),
-				comment_post_ID: $form.find('input[name="comment_post_ID"]').val(),
-				author: $('#cms_comment_author').val(),
-				email: $('#cms_comment_email').val(),
-				comment: $('#cms_comment_content').val()
-			};
+                        // Show success message briefly
+                        showResponse('success', '✓ Message sent!');
 
-			// Submit via AJAX
-			$.post(cmsPublic.ajaxUrl, formData)
-				.done(function(response) {
-					if (response.success) {
-						// Show success message
-						$response
-							.html('<div class="cms-comment-success" style="background: #d4edda; border: 1px solid #c3e6cb; padding: 15px; margin: 15px 0; border-radius: 4px; color: #155724;"><strong>✓ ' + response.data.message + '</strong></div>')
-							.show();
+                        // Add the new message to the chat
+                        addMessageToChat(authorName, authorEmail, messageContent);
 
-						// Clear form
-						$form[0].reset();
+                        // Hide response after 3 seconds
+                        setTimeout(function() {
+                            $chatResponse.fadeOut();
+                        }, 3000);
 
-						// Scroll to response
-						$('html, body').animate({
-							scrollTop: $response.offset().top - 100
-						}, 500);
+                        // Update message count in header
+                        updateMessageCount();
 
-						// Reload page after 2 seconds to show new comment
-						setTimeout(function() {
-							location.reload();
-						}, 2000);
-					} else {
-						// Show error message
-						$response
-							.html('<div class="cms-comment-error" style="background: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; margin: 15px 0; border-radius: 4px; color: #721c24;"><strong>✗ Error:</strong> ' + response.data.message + '</div>')
-							.show();
+                    } else {
+                        showResponse('error', 'Error: ' + response.data.message);
+                    }
+                })
+                .fail(function(xhr, status, error) {
+                    console.error('Chat submit error:', status, error);
+                    showResponse('error', 'An error occurred. Please try again.');
+                })
+                .always(function() {
+                    $submitBtn.prop('disabled', false).html(originalBtnHtml);
+                });
+        });
 
-						$submitBtn.prop('disabled', false).text(originalText);
-					}
-				})
-				.fail(function() {
-					// Show error message
-					$response
-						.html('<div class="cms-comment-error" style="background: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; margin: 15px 0; border-radius: 4px; color: #721c24;"><strong>✗ Error:</strong> An error occurred. Please try again.</div>')
-						.show();
+        /**
+         * Show response message
+         */
+        function showResponse(type, message) {
+            $chatResponse
+                .removeClass('success error')
+                .addClass(type)
+                .html(message)
+                .fadeIn();
+        }
 
-					$submitBtn.prop('disabled', false).text(originalText);
-				});
-		});
-	});
+        /**
+         * Add a new message to the chat without reloading
+         */
+        function addMessageToChat(name, email, content) {
+            // Remove empty state if present
+            $('.cms-chat-empty').remove();
+
+            // Create avatar URL using Gravatar
+            var emailHash = md5(email.toLowerCase().trim());
+            var avatarUrl = 'https://www.gravatar.com/avatar/' + emailHash + '?s=40&d=mp';
+
+            // Format the message content (convert newlines to paragraphs)
+            var formattedContent = '<p>' + escapeHtml(content).replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>') + '</p>';
+
+            var messageHtml =
+                '<div class="cms-chat-message new-message">' +
+                    '<div class="cms-chat-avatar">' +
+                        '<img src="' + avatarUrl + '" alt="" width="40" height="40" />' +
+                    '</div>' +
+                    '<div class="cms-chat-bubble">' +
+                        '<div class="cms-chat-meta">' +
+                            '<span class="cms-chat-author">' + escapeHtml(name) + '</span>' +
+                            '<span class="cms-chat-time">Just now</span>' +
+                        '</div>' +
+                        '<div class="cms-chat-content">' + formattedContent + '</div>' +
+                    '</div>' +
+                '</div>';
+
+            $chatMessages.append(messageHtml);
+            scrollToBottom();
+        }
+
+        /**
+         * Scroll chat to bottom
+         */
+        function scrollToBottom() {
+            if ($chatMessages.length) {
+                $chatMessages.animate({
+                    scrollTop: $chatMessages[0].scrollHeight
+                }, 300);
+            }
+        }
+
+        /**
+         * Update message count in header
+         */
+        function updateMessageCount() {
+            var $count = $('.cms-chat-count');
+            if ($count.length) {
+                var currentCount = parseInt($count.text()) || 0;
+                $count.text(currentCount + 1);
+            } else {
+                // Add count badge if it doesn't exist
+                $('.cms-chat-title').append('<span class="cms-chat-count">1</span>');
+            }
+        }
+
+        /**
+         * Simple HTML escaping
+         */
+        function escapeHtml(text) {
+            var div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        /**
+         * Simple MD5 hash for Gravatar (using a minimal implementation)
+         */
+        function md5(string) {
+            // Simple hash function - for Gravatar only
+            // Using a basic implementation since we just need consistent hashing
+            var hash = 0;
+            if (string.length === 0) return hash.toString(16);
+            for (var i = 0; i < string.length; i++) {
+                var char = string.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            // Return a 32-char hex string (Gravatar will handle invalid hashes gracefully)
+            return Math.abs(hash).toString(16).padStart(32, '0');
+        }
+
+        /**
+         * Get current post ID
+         */
+        function getPostId() {
+            var urlParams = new URLSearchParams(window.location.search);
+            var postId = urlParams.get('post');
+
+            if (!postId) {
+                var bodyClasses = $('body').attr('class');
+                if (bodyClasses) {
+                    var classes = bodyClasses.split(' ');
+                    for (var i = 0; i < classes.length; i++) {
+                        if (classes[i].indexOf('postid-') === 0) {
+                            postId = classes[i].replace('postid-', '');
+                            break;
+                        }
+                    }
+                }
+            }
+
+            return postId;
+        }
+
+        // ============================================
+        // COPY SHAREABLE LINK
+        // ============================================
+
+        $('#cms-copy-link').on('click', function() {
+            var $input = $('#cms-share-url');
+            $input.select();
+            document.execCommand('copy');
+
+            var $btn = $(this);
+            var originalText = $btn.text();
+            $btn.text('Copied!');
+
+            setTimeout(function() {
+                $btn.text(originalText);
+            }, 2000);
+        });
+
+        // ============================================
+        // SMOOTH SCROLL TO CHAT
+        // ============================================
+
+        $('a[href="#cms-chat"]').on('click', function(e) {
+            e.preventDefault();
+            $('html, body').animate({
+                scrollTop: $('#cms-chat').offset().top - 100
+            }, 500);
+        });
+
+    });
 
 })(jQuery);

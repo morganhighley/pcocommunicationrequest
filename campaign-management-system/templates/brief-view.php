@@ -334,24 +334,13 @@ while ( have_posts() ) :
 			<div class="cms-page-number">5</div>
 		</div>
 
-		<!-- COMMENTS SECTION (no-print) -->
+		<!-- CHAT SECTION (no-print) -->
 		<div class="cms-comments-section no-print">
-			<h2><?php esc_html_e( 'Feedback & Comments', 'campaign-mgmt' ); ?></h2>
-			<?php if ( isset( $_GET['comment_success'] ) && '1' === $_GET['comment_success'] ) : ?>
-				<div class="cms-comment-success" style="background: #d4edda; border: 1px solid #c3e6cb; padding: 15px; margin-bottom: 20px; border-radius: 4px; color: #155724;">
-					<strong><?php esc_html_e( '✓ Comment submitted successfully!', 'campaign-mgmt' ); ?></strong>
-					<?php esc_html_e( 'Your feedback has been added to this brief.', 'campaign-mgmt' ); ?>
-				</div>
-			<?php endif; ?>
 			<?php
-			if ( comments_open() || get_comments_number() ) {
-				// Use custom comments template.
-				$custom_comments = CMS_PLUGIN_DIR . 'templates/comments.php';
-				if ( file_exists( $custom_comments ) ) {
-					include $custom_comments;
-				} else {
-					comments_template();
-				}
+			// Use custom chat template
+			$custom_chat = CMS_PLUGIN_DIR . 'templates/comments.php';
+			if ( file_exists( $custom_chat ) ) {
+				include $custom_chat;
 			}
 			?>
 		</div>
