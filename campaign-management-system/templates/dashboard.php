@@ -144,46 +144,46 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<?php endif; ?>
 	</div>
 
-	<!-- Recent Comments -->
+	<!-- Recent Messages -->
 	<div class="cms-dashboard-section">
-		<h2><?php esc_html_e( 'Recent Comments', 'campaign-mgmt' ); ?></h2>
+		<h2><?php esc_html_e( 'Recent Messages', 'campaign-mgmt' ); ?></h2>
 
-		<?php if ( ! empty( $recent_comments ) ) : ?>
+		<?php if ( ! empty( $recent_messages ) ) : ?>
 			<table class="wp-list-table widefat fixed striped">
 				<thead>
 					<tr>
-						<th><?php esc_html_e( 'Author', 'campaign-mgmt' ); ?></th>
-						<th><?php esc_html_e( 'Comment', 'campaign-mgmt' ); ?></th>
+						<th><?php esc_html_e( 'From', 'campaign-mgmt' ); ?></th>
+						<th><?php esc_html_e( 'Message', 'campaign-mgmt' ); ?></th>
 						<th><?php esc_html_e( 'Brief', 'campaign-mgmt' ); ?></th>
-						<th><?php esc_html_e( 'Submitted', 'campaign-mgmt' ); ?></th>
+						<th><?php esc_html_e( 'Received', 'campaign-mgmt' ); ?></th>
 						<th><?php esc_html_e( 'Actions', 'campaign-mgmt' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
-					<?php foreach ( $recent_comments as $comment ) : ?>
-						<tr>
+					<?php foreach ( $recent_messages as $msg ) : ?>
+						<tr<?php echo ! $msg->is_read ? ' style="background: #fff8e5;"' : ''; ?>>
 							<td>
-								<strong><?php echo esc_html( $comment->comment_author ); ?></strong><br>
-								<small><?php echo esc_html( $comment->comment_author_email ); ?></small>
+								<strong><?php echo esc_html( $msg->author_name ); ?></strong><br>
+								<small><?php echo esc_html( $msg->author_email ); ?></small>
 							</td>
 							<td>
-								<?php
-								$excerpt = wp_trim_words( $comment->comment_content, 20, '...' );
-								echo esc_html( $excerpt );
-								?>
+								<?php echo esc_html( wp_trim_words( $msg->message, 15, '...' ) ); ?>
+								<?php if ( ! $msg->is_read ) : ?>
+									<span style="background: #ffc107; color: #000; padding: 1px 6px; border-radius: 3px; font-size: 10px; margin-left: 5px;">NEW</span>
+								<?php endif; ?>
 							</td>
 							<td>
-								<a href="<?php echo esc_url( get_edit_post_link( $comment->comment_post_ID ) ); ?>">
-									<?php echo esc_html( get_the_title( $comment->comment_post_ID ) ); ?>
+								<a href="<?php echo esc_url( get_edit_post_link( $msg->brief_id ) ); ?>">
+									<?php echo esc_html( $msg->brief_title ); ?>
 								</a>
 							</td>
-							<td><?php echo esc_html( human_time_diff( strtotime( $comment->comment_date ), current_time( 'timestamp' ) ) . ' ago' ); ?></td>
+							<td><?php echo esc_html( human_time_diff( strtotime( $msg->created_at ), current_time( 'timestamp' ) ) . ' ago' ); ?></td>
 							<td>
-								<a href="<?php echo esc_url( get_permalink( $comment->comment_post_ID ) . '#comment-' . $comment->comment_ID ); ?>" class="button button-small" target="_blank">
+								<a href="<?php echo esc_url( get_permalink( $msg->brief_id ) ); ?>" class="button button-small" target="_blank">
 									<?php esc_html_e( 'View', 'campaign-mgmt' ); ?>
 								</a>
-								<a href="<?php echo esc_url( admin_url( 'comment.php?action=editcomment&c=' . $comment->comment_ID ) ); ?>" class="button button-small">
-									<?php esc_html_e( 'Edit', 'campaign-mgmt' ); ?>
+								<a href="<?php echo esc_url( get_edit_post_link( $msg->brief_id ) ); ?>" class="button button-small">
+									<?php esc_html_e( 'Edit Brief', 'campaign-mgmt' ); ?>
 								</a>
 							</td>
 						</tr>
@@ -191,7 +191,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				</tbody>
 			</table>
 		<?php else : ?>
-			<p><?php esc_html_e( 'No comments yet.', 'campaign-mgmt' ); ?></p>
+			<p><?php esc_html_e( 'No messages yet.', 'campaign-mgmt' ); ?></p>
 		<?php endif; ?>
 	</div>
 

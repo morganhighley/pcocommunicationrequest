@@ -68,6 +68,7 @@ class Campaign_Management_System {
 		require_once CMS_PLUGIN_DIR . 'includes/class-workflow.php';
 		require_once CMS_PLUGIN_DIR . 'includes/class-settings.php';
 		require_once CMS_PLUGIN_DIR . 'includes/class-api-planning-center.php';
+		require_once CMS_PLUGIN_DIR . 'includes/class-messages.php';
 	}
 
 	/**
@@ -79,6 +80,9 @@ class Campaign_Management_System {
 		add_action( 'wp_enqueue_scripts', array( $this, 'public_scripts' ) );
 		add_action( 'plugins_loaded', array( $this, 'load_plugin_textdomain' ) );
 		add_action( 'admin_notices', array( $this, 'activation_notice' ) );
+
+		// Delete messages when brief is deleted
+		add_action( 'before_delete_post', array( $this, 'cleanup_brief_messages' ) );
 
 		// Activation and deactivation hooks.
 		register_activation_hook( __FILE__, array( $this, 'activate' ) );
@@ -103,6 +107,9 @@ class Campaign_Management_System {
 
 		// Initialize settings.
 		new CMS_Settings();
+
+		// Initialize messaging system.
+		new CMS_Messages();
 
 		// Initialize Planning Center API (Phase 2).
 		// new CMS_API_Planning_Center();
@@ -165,12 +172,35 @@ class Campaign_Management_System {
 				true
 			);
 
+			// Get current post ID
+			$post_id = get_the_ID();
+
+			// Get existing messages for initial render
+			$messages_handler = new CMS_Messages();
+			$messages = $messages_handler->get_messages_for_brief( $post_id );
+
+			// Format messages for JS
+			$formatted_messages = array();
+			foreach ( $messages as $msg ) {
+				$formatted_messages[] = array(
+					'id' => $msg->id,
+					'author_name' => esc_html( $msg->author_name ),
+					'author_email' => $msg->author_email,
+					'message' => nl2br( esc_html( $msg->message ) ),
+					'created_at' => $msg->created_at,
+					'time_ago' => human_time_diff( strtotime( $msg->created_at ), current_time( 'timestamp' ) ) . ' ago',
+				);
+			}
+
 			wp_localize_script(
 				'cms-public',
 				'cmsPublic',
 				array(
 					'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 					'nonce'   => wp_create_nonce( 'cms-public' ),
+					'messagesNonce' => wp_create_nonce( 'cms_messages_nonce' ),
+					'briefId' => $post_id,
+					'messages' => $formatted_messages,
 				)
 			);
 		}
@@ -214,6 +244,9 @@ class Campaign_Management_System {
 		// Trigger init to register post type.
 		$this->init();
 
+		// Create messages database table
+		CMS_Messages::create_table();
+
 		// Flush rewrite rules twice to ensure they take effect.
 		flush_rewrite_rules();
 		delete_option( 'rewrite_rules' );
@@ -240,6 +273,19 @@ class Campaign_Management_System {
 	public function deactivate() {
 		// Flush rewrite rules.
 		flush_rewrite_rules();
+	}
+
+	/**
+	 * Clean up messages when a brief is deleted
+	 *
+	 * @param int $post_id Post ID being deleted.
+	 */
+	public function cleanup_brief_messages( $post_id ) {
+		$post = get_post( $post_id );
+		if ( $post && 'campaign_brief' === $post->post_type ) {
+			$messages = new CMS_Messages();
+			$messages->delete_brief_messages( $post_id );
+		}
 	}
 }
 
