@@ -244,6 +244,54 @@ class Campaign_Management_System {
 }
 
 /**
+ * Migrate existing briefs to use workflow status meta field
+ * Run this once after updating the plugin
+ */
+function cms_migrate_workflow_status() {
+	// Check if migration has already run
+	if ( get_option( 'cms_workflow_migration_complete' ) ) {
+		return;
+	}
+
+	$briefs = get_posts( array(
+		'post_type'      => 'campaign_brief',
+		'posts_per_page' => -1,
+		'post_status'    => 'any',
+	));
+
+	foreach ( $briefs as $brief ) {
+		// Check if workflow status is already set
+		$existing_status = get_post_meta( $brief->ID, '_cms_workflow_status', true );
+		if ( ! empty( $existing_status ) ) {
+			continue;
+		}
+
+		// Determine workflow status based on existing data
+		$accepted_by = get_post_meta( $brief->ID, '_cms_accepted_by', true );
+		$acceptance_status = get_post_meta( $brief->ID, '_cms_acceptance_status', true );
+
+		if ( $accepted_by || 'accepted' === $acceptance_status ) {
+			$workflow_status = 'accepted';
+		} elseif ( 'publish' === $brief->post_status ) {
+			// Published briefs without acceptance should be pending acceptance
+			$workflow_status = 'pending_acceptance';
+		} elseif ( 'draft' === $brief->post_status ) {
+			$workflow_status = 'draft';
+		} else {
+			$workflow_status = 'draft';
+		}
+
+		update_post_meta( $brief->ID, '_cms_workflow_status', $workflow_status );
+	}
+
+	// Mark migration as complete
+	update_option( 'cms_workflow_migration_complete', true );
+}
+
+// Hook to run on admin init (will run once due to option check)
+add_action( 'admin_init', 'cms_migrate_workflow_status' );
+
+/**
  * Main instance of Campaign_Management_System
  *
  * Returns the main instance of CMS to prevent the need to use globals.

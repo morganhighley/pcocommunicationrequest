@@ -81,7 +81,11 @@ while ( have_posts() ) :
 	$service_level = $service_level_terms && ! is_wp_error( $service_level_terms ) ? $service_level_terms[0]->name : '';
 	$service_level_class = 'service-' . strtolower( $service_level );
 
-	// Workflow status.
+	// Workflow status - use meta field instead of post_status
+	$workflow_status = get_post_meta( get_the_ID(), '_cms_workflow_status', true );
+	if ( empty( $workflow_status ) ) {
+		$workflow_status = 'draft';
+	}
 	$acceptance_status = get_post_meta( get_the_ID(), '_cms_acceptance_status', true );
 	$accepted_by = get_post_meta( get_the_ID(), '_cms_accepted_by', true );
 	$accepted_date = get_post_meta( get_the_ID(), '_cms_accepted_date', true );
