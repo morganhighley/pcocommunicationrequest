@@ -164,8 +164,14 @@ class CMS_Settings {
 	 */
 	public function api_section_callback() {
 		?>
+		<div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 15px 0;">
+			<h3 style="margin-top: 0;"><?php esc_html_e( '⚠️ Planning Center Tasks Integration - Future Upgrade', 'campaign-mgmt' ); ?></h3>
+			<p><strong><?php esc_html_e( 'This feature is currently disabled pending the release of Planning Center\'s Tasks API.', 'campaign-mgmt' ); ?></strong></p>
+			<p><?php esc_html_e( 'Once Planning Center releases their Tasks API endpoint, this integration will be enabled in a future upgrade. The integration will automatically create tasks in Planning Center when campaign briefs are accepted.', 'campaign-mgmt' ); ?></p>
+			<p><?php esc_html_e( 'For now, you can configure the API credentials below in preparation for when the feature becomes available.', 'campaign-mgmt' ); ?></p>
+		</div>
 		<div style="background: #f0f6fc; border-left: 4px solid #0073aa; padding: 15px; margin: 15px 0;">
-			<h3 style="margin-top: 0;"><?php esc_html_e( 'Setup Instructions (Phase 2)', 'campaign-mgmt' ); ?></h3>
+			<h4 style="margin-top: 0;"><?php esc_html_e( 'Setup Instructions', 'campaign-mgmt' ); ?></h4>
 			<ol>
 				<li><?php esc_html_e( 'Go to Planning Center → Personal Settings → Developer', 'campaign-mgmt' ); ?></li>
 				<li><?php esc_html_e( 'Click "New Personal Access Token"', 'campaign-mgmt' ); ?></li>
@@ -174,7 +180,6 @@ class CMS_Settings {
 				<li><?php esc_html_e( 'Click Submit - you will receive an Application ID and Secret', 'campaign-mgmt' ); ?></li>
 				<li><?php esc_html_e( 'Copy those credentials and paste below', 'campaign-mgmt' ); ?></li>
 			</ol>
-			<p><strong><?php esc_html_e( 'Note: This feature is for Phase 2. For now, manually create briefs from form data.', 'campaign-mgmt' ); ?></strong></p>
 		</div>
 		<?php
 	}

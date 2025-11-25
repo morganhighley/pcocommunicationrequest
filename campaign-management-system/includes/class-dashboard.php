@@ -97,16 +97,19 @@ class CMS_Dashboard {
 	 * @return int
 	 */
 	private function get_count_by_status( $status ) {
-		global $wpdb;
-
-		// Use direct database query for more reliable counting of custom post statuses.
-		$count = $wpdb->get_var(
-			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = %s AND post_status = %s",
-				'campaign_brief',
-				$status
-			)
+		// Use WP_Query with count_posts for more reliable counting.
+		// This respects WordPress filters and hooks.
+		$args = array(
+			'post_type'      => 'campaign_brief',
+			'post_status'    => $status,
+			'posts_per_page' => -1,
+			'fields'         => 'ids',
+			'no_found_rows'  => false,
 		);
+
+		$query = new WP_Query( $args );
+		$count = $query->found_posts;
+		wp_reset_postdata();
 
 		return absint( $count );
 	}

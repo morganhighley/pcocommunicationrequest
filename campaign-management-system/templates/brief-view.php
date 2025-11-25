@@ -374,9 +374,6 @@ while ( have_posts() ) :
 						<button type="submit" class="cms-button cms-button-primary">
 							<?php esc_html_e( 'Accept Brief', 'campaign-mgmt' ); ?>
 						</button>
-						<button type="button" class="cms-button cms-button-secondary cms-modal-close">
-							<?php esc_html_e( 'Cancel', 'campaign-mgmt' ); ?>
-						</button>
 					</p>
 				</form>
 			</div>
