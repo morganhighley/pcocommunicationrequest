@@ -1,0 +1,576 @@
+<?php
+/**
+ * Campaign Brief Meta Boxes
+ *
+ * @package CampaignManagementSystem
+ */
+
+// Exit if accessed directly.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * CMS_Meta_Boxes Class
+ */
+class CMS_Meta_Boxes {
+
+	/**
+	 * Constructor
+	 */
+	public function __construct() {
+		add_action( 'add_meta_boxes', array( $this, 'add_meta_boxes' ) );
+		add_action( 'save_post_campaign_brief', array( $this, 'save_meta_boxes' ), 10, 2 );
+		add_filter( 'manage_campaign_brief_posts_columns', array( $this, 'custom_columns' ) );
+		add_action( 'manage_campaign_brief_posts_custom_column', array( $this, 'custom_column_content' ), 10, 2 );
+	}
+
+	/**
+	 * Add meta boxes
+	 */
+	public function add_meta_boxes() {
+		// Page 1: Campaign Brief (Top Sheet).
+		add_meta_box(
+			'cms_campaign_info',
+			__( 'Page 1: Campaign Brief', 'campaign-mgmt' ),
+			array( $this, 'render_campaign_info' ),
+			'campaign_brief',
+			'normal',
+			'high'
+		);
+
+		// Page 2: Messaging Strategy.
+		add_meta_box(
+			'cms_messaging_strategy',
+			__( 'Page 2: Messaging Strategy', 'campaign-mgmt' ),
+			array( $this, 'render_messaging_strategy' ),
+			'campaign_brief',
+			'normal',
+			'default'
+		);
+
+		// Page 3: Creative Direction.
+		add_meta_box(
+			'cms_creative_direction',
+			__( 'Page 3: Inspiration for Concepting', 'campaign-mgmt' ),
+			array( $this, 'render_creative_direction' ),
+			'campaign_brief',
+			'normal',
+			'default'
+		);
+
+		// Page 4: Channel Plan.
+		add_meta_box(
+			'cms_channel_plan',
+			__( 'Page 4: Channel Plan', 'campaign-mgmt' ),
+			array( $this, 'render_channel_plan' ),
+			'campaign_brief',
+			'normal',
+			'default'
+		);
+
+		// Workflow status.
+		add_meta_box(
+			'cms_workflow',
+			__( 'Brief Status & Workflow', 'campaign-mgmt' ),
+			array( $this, 'render_workflow' ),
+			'campaign_brief',
+			'side',
+			'high'
+		);
+
+		// Shareable link.
+		add_meta_box(
+			'cms_share',
+			__( 'Share Brief', 'campaign-mgmt' ),
+			array( $this, 'render_share' ),
+			'campaign_brief',
+			'side',
+			'default'
+		);
+	}
+
+	/**
+	 * Render Page 1: Campaign Brief
+	 *
+	 * @param WP_Post $post Current post object.
+	 */
+	public function render_campaign_info( $post ) {
+		wp_nonce_field( 'cms_meta_box', 'cms_meta_box_nonce' );
+
+		$ministry_department = get_post_meta( $post->ID, '_cms_ministry_department', true );
+		$ministry_representative = get_post_meta( $post->ID, '_cms_ministry_representative', true );
+		$ministry_rep_email = get_post_meta( $post->ID, '_cms_ministry_rep_email', true );
+		$communications_coordinator = get_post_meta( $post->ID, '_cms_communications_coordinator', true );
+		$campaign_title = get_post_meta( $post->ID, '_cms_campaign_title', true );
+		$campaign_tagline = get_post_meta( $post->ID, '_cms_campaign_tagline', true );
+		$campaign_slug = get_post_meta( $post->ID, '_cms_campaign_slug', true );
+		$event_dates = get_post_meta( $post->ID, '_cms_event_dates', true );
+		$promotion_dates = get_post_meta( $post->ID, '_cms_promotion_dates', true );
+		$file_path = get_post_meta( $post->ID, '_cms_file_path', true );
+		$livestream_location = get_post_meta( $post->ID, '_cms_livestream_location', true );
+		?>
+
+		<div class="cms-meta-box-grid">
+			<div class="cms-field">
+				<label for="cms_ministry_department"><?php esc_html_e( 'Ministry/Department', 'campaign-mgmt' ); ?></label>
+				<input type="text" id="cms_ministry_department" name="cms_ministry_department" value="<?php echo esc_attr( $ministry_department ); ?>" class="widefat" />
+				<p class="description"><?php esc_html_e( 'e.g., Metro Kids, Women\'s Ministry', 'campaign-mgmt' ); ?></p>
+			</div>
+
+			<div class="cms-field">
+				<label for="cms_ministry_representative"><?php esc_html_e( 'Ministry Representative', 'campaign-mgmt' ); ?></label>
+				<input type="text" id="cms_ministry_representative" name="cms_ministry_representative" value="<?php echo esc_attr( $ministry_representative ); ?>" class="widefat" />
+			</div>
+
+			<div class="cms-field">
+				<label for="cms_ministry_rep_email"><?php esc_html_e( 'Ministry Rep Email', 'campaign-mgmt' ); ?></label>
+				<input type="email" id="cms_ministry_rep_email" name="cms_ministry_rep_email" value="<?php echo esc_attr( $ministry_rep_email ); ?>" class="widefat" />
+			</div>
+
+			<div class="cms-field">
+				<label for="cms_communications_coordinator"><?php esc_html_e( 'Communications Coordinator', 'campaign-mgmt' ); ?></label>
+				<input type="text" id="cms_communications_coordinator" name="cms_communications_coordinator" value="<?php echo esc_attr( $communications_coordinator ); ?>" class="widefat" placeholder="Laura Murray" />
+			</div>
+
+			<div class="cms-field">
+				<label for="cms_campaign_title"><?php esc_html_e( 'Title', 'campaign-mgmt' ); ?></label>
+				<input type="text" id="cms_campaign_title" name="cms_campaign_title" value="<?php echo esc_attr( $campaign_title ); ?>" class="widefat" />
+			</div>
+
+			<div class="cms-field">
+				<label for="cms_campaign_tagline"><?php esc_html_e( 'Tagline', 'campaign-mgmt' ); ?></label>
+				<input type="text" id="cms_campaign_tagline" name="cms_campaign_tagline" value="<?php echo esc_attr( $campaign_tagline ); ?>" class="widefat" />
+			</div>
+
+			<div class="cms-field">
+				<label for="cms_campaign_slug"><?php esc_html_e( 'Call to action and /slug', 'campaign-mgmt' ); ?></label>
+				<div class="cms-slug-wrapper">
+					<span class="cms-slug-prefix">metropolitanbible.church/</span>
+					<input type="text" id="cms_campaign_slug" name="cms_campaign_slug" value="<?php echo esc_attr( $campaign_slug ); ?>" />
+				</div>
+			</div>
+
+			<div class="cms-field">
+				<label for="cms_event_dates"><?php esc_html_e( 'Date(s) of event', 'campaign-mgmt' ); ?></label>
+				<input type="text" id="cms_event_dates" name="cms_event_dates" value="<?php echo esc_attr( $event_dates ); ?>" class="widefat" />
+				<p class="description"><?php esc_html_e( 'e.g., March 15-17, 2025 or June 10, 2025', 'campaign-mgmt' ); ?></p>
+			</div>
+
+			<div class="cms-field">
+				<label for="cms_promotion_dates"><?php esc_html_e( 'Dates for promotion', 'campaign-mgmt' ); ?></label>
+				<input type="text" id="cms_promotion_dates" name="cms_promotion_dates" value="<?php echo esc_attr( $promotion_dates ); ?>" class="widefat" />
+				<p class="description"><?php esc_html_e( 'e.g., February 1 - March 14, 2025', 'campaign-mgmt' ); ?></p>
+			</div>
+
+			<div class="cms-field">
+				<label for="cms_file_path"><?php esc_html_e( 'File path', 'campaign-mgmt' ); ?></label>
+				<input type="text" id="cms_file_path" name="cms_file_path" value="<?php echo esc_attr( $file_path ); ?>" class="widefat" />
+				<p class="description"><?php esc_html_e( 'Google Drive or server path to campaign assets', 'campaign-mgmt' ); ?></p>
+			</div>
+
+			<div class="cms-field">
+				<label for="cms_livestream_location"><?php esc_html_e( 'Live stream? (if so, where?)', 'campaign-mgmt' ); ?></label>
+				<input type="text" id="cms_livestream_location" name="cms_livestream_location" value="<?php echo esc_attr( $livestream_location ); ?>" class="widefat" />
+				<p class="description"><?php esc_html_e( 'e.g., YouTube, Facebook Live, Church Website', 'campaign-mgmt' ); ?></p>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render Page 2: Messaging Strategy
+	 *
+	 * @param WP_Post $post Current post object.
+	 */
+	public function render_messaging_strategy( $post ) {
+		$context = get_post_meta( $post->ID, '_cms_context', true );
+		$audience = get_post_meta( $post->ID, '_cms_audience', true );
+		$single_persuasive_idea = get_post_meta( $post->ID, '_cms_single_persuasive_idea', true );
+		$key_facts = get_post_meta( $post->ID, '_cms_key_facts', true );
+		$preroll_copy = get_post_meta( $post->ID, '_cms_preroll_copy', true );
+		$approved_additional_copy = get_post_meta( $post->ID, '_cms_approved_additional_copy', true );
+		$goals = get_post_meta( $post->ID, '_cms_goals', true );
+		?>
+
+		<div class="cms-meta-box-grid">
+			<div class="cms-field">
+				<label for="cms_context"><?php esc_html_e( 'Context / History', 'campaign-mgmt' ); ?></label>
+				<textarea id="cms_context" name="cms_context" rows="4" class="widefat"><?php echo esc_textarea( $context ); ?></textarea>
+				<p class="description"><?php esc_html_e( 'Background information about this campaign', 'campaign-mgmt' ); ?></p>
+			</div>
+
+			<div class="cms-field">
+				<label for="cms_audience"><?php esc_html_e( 'Target Audience(s)', 'campaign-mgmt' ); ?></label>
+				<textarea id="cms_audience" name="cms_audience" rows="3" class="widefat"><?php echo esc_textarea( $audience ); ?></textarea>
+				<p class="description"><?php esc_html_e( 'Who are we trying to reach?', 'campaign-mgmt' ); ?></p>
+			</div>
+
+			<div class="cms-field">
+				<label for="cms_single_persuasive_idea"><?php esc_html_e( 'Single persuasive idea', 'campaign-mgmt' ); ?></label>
+				<input type="text" id="cms_single_persuasive_idea" name="cms_single_persuasive_idea" value="<?php echo esc_attr( $single_persuasive_idea ); ?>" class="widefat" />
+				<p class="description"><?php esc_html_e( 'One-sentence purpose/reason for this campaign', 'campaign-mgmt' ); ?></p>
+			</div>
+
+			<div class="cms-field">
+				<label for="cms_key_facts"><?php esc_html_e( 'Key facts', 'campaign-mgmt' ); ?></label>
+				<textarea id="cms_key_facts" name="cms_key_facts" rows="4" class="widefat"><?php echo esc_textarea( $key_facts ); ?></textarea>
+				<p class="description"><?php esc_html_e( 'What is this event? What does it accomplish? Any uniqueness?', 'campaign-mgmt' ); ?></p>
+			</div>
+
+			<div class="cms-field">
+				<label for="cms_preroll_copy"><?php esc_html_e( 'Pre-roll copy', 'campaign-mgmt' ); ?></label>
+				<textarea id="cms_preroll_copy" name="cms_preroll_copy" rows="3" class="widefat"><?php echo esc_textarea( $preroll_copy ); ?></textarea>
+				<p class="description"><?php esc_html_e( 'Event Name - Brief description. Learn more at URL/slug.', 'campaign-mgmt' ); ?></p>
+			</div>
+
+			<div class="cms-field">
+				<label for="cms_approved_additional_copy"><?php esc_html_e( 'Approved additional copy', 'campaign-mgmt' ); ?></label>
+				<textarea id="cms_approved_additional_copy" name="cms_approved_additional_copy" rows="5" class="widefat"><?php echo esc_textarea( $approved_additional_copy ); ?></textarea>
+				<p class="description"><?php esc_html_e( 'More details. How it works. Schedule.', 'campaign-mgmt' ); ?></p>
+			</div>
+
+			<div class="cms-field">
+				<label for="cms_goals"><?php esc_html_e( 'Goals', 'campaign-mgmt' ); ?></label>
+				<textarea id="cms_goals" name="cms_goals" rows="4" class="widefat"><?php echo esc_textarea( $goals ); ?></textarea>
+				<p class="description"><?php esc_html_e( 'What would need to happen for this event to be considered successful?', 'campaign-mgmt' ); ?></p>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render Page 3: Creative Direction
+	 *
+	 * @param WP_Post $post Current post object.
+	 */
+	public function render_creative_direction( $post ) {
+		$scriptures = get_post_meta( $post->ID, '_cms_scriptures', true );
+		$emotion_energy = get_post_meta( $post->ID, '_cms_emotion_energy', true );
+		$styles_elements = get_post_meta( $post->ID, '_cms_styles_elements', true );
+		$visual_inspiration = get_post_meta( $post->ID, '_cms_visual_inspiration', true );
+		?>
+
+		<div class="cms-meta-box-grid">
+			<div class="cms-field">
+				<label for="cms_scriptures"><?php esc_html_e( 'Scriptures', 'campaign-mgmt' ); ?></label>
+				<textarea id="cms_scriptures" name="cms_scriptures" rows="3" class="widefat"><?php echo esc_textarea( $scriptures ); ?></textarea>
+				<p class="description"><?php esc_html_e( 'Scripture references used as a guide for this project', 'campaign-mgmt' ); ?></p>
+			</div>
+
+			<div class="cms-field">
+				<label for="cms_emotion_energy"><?php esc_html_e( 'Emotion or energy', 'campaign-mgmt' ); ?></label>
+				<textarea id="cms_emotion_energy" name="cms_emotion_energy" rows="3" class="widefat"><?php echo esc_textarea( $emotion_energy ); ?></textarea>
+				<p class="description"><?php esc_html_e( 'What feeling should this campaign convey?', 'campaign-mgmt' ); ?></p>
+			</div>
+
+			<div class="cms-field">
+				<label for="cms_styles_elements"><?php esc_html_e( 'Styles or graphic elements', 'campaign-mgmt' ); ?></label>
+				<textarea id="cms_styles_elements" name="cms_styles_elements" rows="3" class="widefat"><?php echo esc_textarea( $styles_elements ); ?></textarea>
+				<p class="description"><?php esc_html_e( 'Design direction, colors, typography, etc.', 'campaign-mgmt' ); ?></p>
+			</div>
+
+			<div class="cms-field">
+				<label for="cms_visual_inspiration"><?php esc_html_e( 'Visuals (links or descriptions)', 'campaign-mgmt' ); ?></label>
+				<textarea id="cms_visual_inspiration" name="cms_visual_inspiration" rows="6" class="widefat"><?php echo esc_textarea( $visual_inspiration ); ?></textarea>
+				<p class="description"><?php esc_html_e( 'Paste links to images, videos, or describe concepts that could serve as inspiration', 'campaign-mgmt' ); ?></p>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render Page 4: Channel Plan
+	 *
+	 * @param WP_Post $post Current post object.
+	 */
+	public function render_channel_plan( $post ) {
+		$channel_plan = get_post_meta( $post->ID, '_cms_channel_plan', true );
+
+		// Default channel plan structure.
+		if ( empty( $channel_plan ) ) {
+			$channel_plan = array(
+				array( 'channel' => 'metropolitanbible.church/[slug]', 'frequency' => '', 'ideas' => '' ),
+				array( 'channel' => 'Bulletin - Print', 'frequency' => '', 'ideas' => '' ),
+				array( 'channel' => 'Bulletin - Digital', 'frequency' => '', 'ideas' => '' ),
+				array( 'channel' => 'Service Pre-roll', 'frequency' => '', 'ideas' => '' ),
+				array( 'channel' => 'Magnify News', 'frequency' => '', 'ideas' => '' ),
+				array( 'channel' => 'Metropolitan Facebook', 'frequency' => '', 'ideas' => '' ),
+				array( 'channel' => 'Metropolitan Instagram', 'frequency' => '', 'ideas' => '' ),
+				array( 'channel' => 'Family Group Announcements', 'frequency' => '', 'ideas' => '' ),
+				array( 'channel' => 'Homepage Takeover', 'frequency' => '', 'ideas' => '' ),
+				array( 'channel' => 'Church Text/CCA Push Notification', 'frequency' => '', 'ideas' => '' ),
+			);
+		} else {
+			$channel_plan = json_decode( $channel_plan, true );
+		}
+		?>
+
+		<p class="description"><?php esc_html_e( 'Plan which channels to use for promoting this campaign. Add or remove rows as needed.', 'campaign-mgmt' ); ?></p>
+
+		<div id="cms-channel-plan-wrapper">
+			<table class="cms-channel-plan-table">
+				<thead>
+					<tr>
+						<th style="width: 35%;"><?php esc_html_e( 'Channel', 'campaign-mgmt' ); ?></th>
+						<th style="width: 20%;"><?php esc_html_e( 'Frequency', 'campaign-mgmt' ); ?></th>
+						<th style="width: 40%;"><?php esc_html_e( 'Ideas', 'campaign-mgmt' ); ?></th>
+						<th style="width: 5%;"></th>
+					</tr>
+				</thead>
+				<tbody id="cms-channel-plan-rows">
+					<?php foreach ( $channel_plan as $index => $row ) : ?>
+						<tr class="cms-channel-row">
+							<td>
+								<input type="text" name="cms_channel_plan[<?php echo esc_attr( $index ); ?>][channel]" value="<?php echo esc_attr( $row['channel'] ); ?>" class="widefat" />
+							</td>
+							<td>
+								<input type="text" name="cms_channel_plan[<?php echo esc_attr( $index ); ?>][frequency]" value="<?php echo esc_attr( $row['frequency'] ); ?>" class="widefat" />
+							</td>
+							<td>
+								<input type="text" name="cms_channel_plan[<?php echo esc_attr( $index ); ?>][ideas]" value="<?php echo esc_attr( $row['ideas'] ); ?>" class="widefat" />
+							</td>
+							<td>
+								<button type="button" class="button cms-remove-channel-row">×</button>
+							</td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+			<button type="button" class="button button-secondary" id="cms-add-channel-row">
+				<?php esc_html_e( '+ Add Channel', 'campaign-mgmt' ); ?>
+			</button>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render Workflow meta box
+	 *
+	 * @param WP_Post $post Current post object.
+	 */
+	public function render_workflow( $post ) {
+		$acceptance_status = get_post_meta( $post->ID, '_cms_acceptance_status', true );
+		$accepted_by = get_post_meta( $post->ID, '_cms_accepted_by', true );
+		$accepted_date = get_post_meta( $post->ID, '_cms_accepted_date', true );
+		$is_locked = get_post_meta( $post->ID, '_cms_is_locked', true );
+		?>
+
+		<div class="cms-workflow-status">
+			<?php if ( $accepted_by && $accepted_date ) : ?>
+				<p class="cms-accepted-info">
+					<strong><?php esc_html_e( 'Accepted by:', 'campaign-mgmt' ); ?></strong><br>
+					<?php echo esc_html( $accepted_by ); ?><br>
+					<small><?php echo esc_html( date( 'F j, Y \a\t g:i a', strtotime( $accepted_date ) ) ); ?></small>
+				</p>
+			<?php endif; ?>
+
+			<?php if ( $is_locked ) : ?>
+				<div class="notice notice-warning inline">
+					<p><strong><?php esc_html_e( '🔒 This brief is locked', 'campaign-mgmt' ); ?></strong><br>
+					<?php esc_html_e( 'Editing will require re-acceptance from ministry leader.', 'campaign-mgmt' ); ?></p>
+				</div>
+				<p>
+					<button type="button" class="button button-secondary" id="cms-unlock-brief">
+						<?php esc_html_e( 'Unlock Brief', 'campaign-mgmt' ); ?>
+					</button>
+				</p>
+			<?php endif; ?>
+
+			<input type="hidden" id="cms_is_locked" name="cms_is_locked" value="<?php echo esc_attr( $is_locked ); ?>" />
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render Share meta box
+	 *
+	 * @param WP_Post $post Current post object.
+	 */
+	public function render_share( $post ) {
+		if ( 'publish' !== $post->post_status && 'pending_acceptance' !== $post->post_status && 'accepted' !== $post->post_status ) {
+			?>
+			<p class="description"><?php esc_html_e( 'Save as Draft first to generate shareable link.', 'campaign-mgmt' ); ?></p>
+			<?php
+			return;
+		}
+
+		$share_url = get_permalink( $post->ID );
+		?>
+
+		<div class="cms-share-box">
+			<p><strong><?php esc_html_e( 'Shareable Link:', 'campaign-mgmt' ); ?></strong></p>
+			<input type="text" value="<?php echo esc_url( $share_url ); ?>" readonly class="widefat" id="cms-share-url" />
+			<p>
+				<button type="button" class="button button-primary" id="cms-copy-link">
+					<?php esc_html_e( 'Copy Link', 'campaign-mgmt' ); ?>
+				</button>
+			</p>
+			<p class="description"><?php esc_html_e( 'Anyone with this link can view the brief. Comments require a name/email.', 'campaign-mgmt' ); ?></p>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Save meta box data
+	 *
+	 * @param int     $post_id Post ID.
+	 * @param WP_Post $post Post object.
+	 */
+	public function save_meta_boxes( $post_id, $post ) {
+		// Check nonce.
+		if ( ! isset( $_POST['cms_meta_box_nonce'] ) || ! wp_verify_nonce( $_POST['cms_meta_box_nonce'], 'cms_meta_box' ) ) {
+			return;
+		}
+
+		// Check autosave.
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+			return;
+		}
+
+		// Check permissions.
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			return;
+		}
+
+		// Save Page 1 fields.
+		$page1_fields = array(
+			'cms_ministry_department',
+			'cms_ministry_representative',
+			'cms_ministry_rep_email',
+			'cms_communications_coordinator',
+			'cms_campaign_title',
+			'cms_campaign_tagline',
+			'cms_campaign_slug',
+			'cms_event_dates',
+			'cms_promotion_dates',
+			'cms_file_path',
+			'cms_livestream_location',
+		);
+
+		foreach ( $page1_fields as $field ) {
+			if ( isset( $_POST[ $field ] ) ) {
+				update_post_meta( $post_id, '_' . $field, sanitize_text_field( $_POST[ $field ] ) );
+			}
+		}
+
+		// Save Page 2 fields.
+		$page2_fields = array(
+			'cms_context',
+			'cms_audience',
+			'cms_single_persuasive_idea',
+			'cms_key_facts',
+			'cms_preroll_copy',
+			'cms_approved_additional_copy',
+			'cms_goals',
+		);
+
+		foreach ( $page2_fields as $field ) {
+			if ( isset( $_POST[ $field ] ) ) {
+				update_post_meta( $post_id, '_' . $field, sanitize_textarea_field( $_POST[ $field ] ) );
+			}
+		}
+
+		// Save Page 3 fields.
+		$page3_fields = array(
+			'cms_scriptures',
+			'cms_emotion_energy',
+			'cms_styles_elements',
+			'cms_visual_inspiration',
+		);
+
+		foreach ( $page3_fields as $field ) {
+			if ( isset( $_POST[ $field ] ) ) {
+				update_post_meta( $post_id, '_' . $field, sanitize_textarea_field( $_POST[ $field ] ) );
+			}
+		}
+
+		// Save Page 4: Channel Plan.
+		if ( isset( $_POST['cms_channel_plan'] ) && is_array( $_POST['cms_channel_plan'] ) ) {
+			$channel_plan = array();
+			foreach ( $_POST['cms_channel_plan'] as $row ) {
+				$channel_plan[] = array(
+					'channel'   => sanitize_text_field( $row['channel'] ),
+					'frequency' => sanitize_text_field( $row['frequency'] ),
+					'ideas'     => sanitize_text_field( $row['ideas'] ),
+				);
+			}
+			update_post_meta( $post_id, '_cms_channel_plan', wp_json_encode( $channel_plan ) );
+		}
+
+		// Save workflow fields.
+		if ( isset( $_POST['cms_is_locked'] ) ) {
+			update_post_meta( $post_id, '_cms_is_locked', absint( $_POST['cms_is_locked'] ) );
+		}
+	}
+
+	/**
+	 * Add custom columns to admin list
+	 *
+	 * @param array $columns Existing columns.
+	 * @return array
+	 */
+	public function custom_columns( $columns ) {
+		$new_columns = array();
+
+		$new_columns['cb'] = $columns['cb'];
+		$new_columns['title'] = $columns['title'];
+		$new_columns['service_level'] = __( 'Service Level', 'campaign-mgmt' );
+		$new_columns['ministry'] = __( 'Ministry', 'campaign-mgmt' );
+		$new_columns['ministry_rep'] = __( 'Ministry Rep', 'campaign-mgmt' );
+		$new_columns['event_date'] = __( 'Event Date', 'campaign-mgmt' );
+		$new_columns['status'] = __( 'Status', 'campaign-mgmt' );
+		$new_columns['date'] = $columns['date'];
+
+		return $new_columns;
+	}
+
+	/**
+	 * Display custom column content
+	 *
+	 * @param string $column Column name.
+	 * @param int    $post_id Post ID.
+	 */
+	public function custom_column_content( $column, $post_id ) {
+		switch ( $column ) {
+			case 'service_level':
+				$terms = get_the_terms( $post_id, 'service_level' );
+				if ( $terms && ! is_wp_error( $terms ) ) {
+					$level = $terms[0]->name;
+					$color_class = 'cms-badge cms-badge-' . strtolower( $level );
+					echo '<span class="' . esc_attr( $color_class ) . '">' . esc_html( $level ) . '</span>';
+				}
+				break;
+
+			case 'ministry':
+				$terms = get_the_terms( $post_id, 'ministry' );
+				if ( $terms && ! is_wp_error( $terms ) ) {
+					echo esc_html( $terms[0]->name );
+				}
+				break;
+
+			case 'ministry_rep':
+				$rep = get_post_meta( $post_id, '_cms_ministry_representative', true );
+				echo esc_html( $rep );
+				break;
+
+			case 'event_date':
+				$date = get_post_meta( $post_id, '_cms_event_dates', true );
+				echo esc_html( $date );
+				break;
+
+			case 'status':
+				$post = get_post( $post_id );
+				$status_labels = array(
+					'draft'              => __( 'Draft', 'campaign-mgmt' ),
+					'pending_acceptance' => __( 'Pending Acceptance', 'campaign-mgmt' ),
+					'accepted'           => __( 'Accepted', 'campaign-mgmt' ),
+					'archived'           => __( 'Archived', 'campaign-mgmt' ),
+					'publish'            => __( 'Published', 'campaign-mgmt' ),
+				);
+				$status = isset( $status_labels[ $post->post_status ] ) ? $status_labels[ $post->post_status ] : $post->post_status;
+				echo esc_html( $status );
+				break;
+		}
+	}
+}

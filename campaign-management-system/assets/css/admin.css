@@ -1,0 +1,371 @@
+/**
+ * Admin Styles for Campaign Management System
+ *
+ * @package CampaignManagementSystem
+ */
+
+/* Meta Box Grid Layout */
+.cms-meta-box-grid {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 15px;
+}
+
+.cms-field {
+	margin-bottom: 15px;
+}
+
+.cms-field label {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 5px;
+	color: #1d2327;
+}
+
+.cms-field input[type="text"],
+.cms-field input[type="email"],
+.cms-field input[type="date"],
+.cms-field textarea,
+.cms-field select {
+	width: 100%;
+	padding: 6px 10px;
+	border: 1px solid #8c8f94;
+	border-radius: 3px;
+}
+
+.cms-field textarea {
+	resize: vertical;
+}
+
+.cms-field .description {
+	font-size: 13px;
+	color: #646970;
+	margin-top: 5px;
+	font-style: italic;
+}
+
+/* Slug Field */
+.cms-slug-wrapper {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+}
+
+.cms-slug-prefix {
+	font-size: 13px;
+	color: #646970;
+	white-space: nowrap;
+}
+
+.cms-slug-wrapper input {
+	flex: 1;
+}
+
+/* Channel Plan Table */
+.cms-channel-plan-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin-bottom: 15px;
+}
+
+.cms-channel-plan-table th,
+.cms-channel-plan-table td {
+	padding: 10px;
+	border: 1px solid #ddd;
+	text-align: left;
+}
+
+.cms-channel-plan-table th {
+	background: #f0f0f0;
+	font-weight: 600;
+	font-size: 13px;
+}
+
+.cms-channel-plan-table input[type="text"] {
+	width: 100%;
+	padding: 5px 8px;
+	border: 1px solid #8c8f94;
+	border-radius: 3px;
+}
+
+.cms-remove-channel-row {
+	background: #dc3232;
+	color: #fff;
+	border: none;
+	border-radius: 3px;
+	width: 30px;
+	height: 30px;
+	cursor: pointer;
+	font-size: 18px;
+	line-height: 1;
+}
+
+.cms-remove-channel-row:hover {
+	background: #a00;
+}
+
+/* Workflow Meta Box */
+.cms-workflow-status {
+	padding: 10px;
+}
+
+.cms-accepted-info {
+	padding: 15px;
+	background: #d4edda;
+	border: 1px solid #c3e6cb;
+	border-radius: 4px;
+	margin-bottom: 15px;
+}
+
+.cms-accepted-info strong {
+	display: block;
+	margin-bottom: 5px;
+}
+
+/* Share Box */
+.cms-share-box {
+	padding: 10px;
+}
+
+.cms-share-box input[type="text"] {
+	margin-bottom: 10px;
+	font-size: 12px;
+	color: #646970;
+}
+
+/* Badges for Service Levels */
+.cms-badge {
+	display: inline-block;
+	padding: 4px 10px;
+	border-radius: 3px;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	color: #fff;
+}
+
+.cms-badge-green {
+	background: #7cb342;
+}
+
+.cms-badge-blue {
+	background: #42a5f5;
+}
+
+.cms-badge-black {
+	background: #424242;
+}
+
+/* Dashboard Styles */
+.cms-dashboard-stats {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 20px;
+	margin: 30px 0;
+}
+
+.cms-stat-card {
+	background: #fff;
+	padding: 25px;
+	border-left: 5px solid #0073aa;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	text-align: center;
+}
+
+.cms-stat-number {
+	font-size: 42px;
+	font-weight: 700;
+	color: #1d2327;
+	margin-bottom: 5px;
+}
+
+.cms-stat-label {
+	font-size: 14px;
+	color: #646970;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.cms-stat-draft {
+	border-left-color: #72aee6;
+}
+
+.cms-stat-pending {
+	border-left-color: #f0b849;
+}
+
+.cms-stat-accepted {
+	border-left-color: #00a32a;
+}
+
+.cms-stat-archived {
+	border-left-color: #8c8f94;
+}
+
+.cms-stat-green {
+	border-left-color: #7cb342;
+}
+
+.cms-stat-blue {
+	border-left-color: #42a5f5;
+}
+
+.cms-stat-black {
+	border-left-color: #424242;
+}
+
+/* Service Level Stats */
+.cms-service-level-stats {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 20px;
+	margin: 20px 0;
+}
+
+/* Dashboard Sections */
+.cms-dashboard-section {
+	background: #fff;
+	padding: 20px;
+	margin: 20px 0;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.cms-dashboard-section h2 {
+	margin-top: 0;
+	padding-bottom: 10px;
+	border-bottom: 2px solid #0073aa;
+}
+
+.cms-dashboard-section ul {
+	list-style: none;
+	padding: 0;
+}
+
+.cms-dashboard-section ul li {
+	padding: 8px 0;
+	border-bottom: 1px solid #f0f0f0;
+}
+
+.cms-dashboard-section ul li:last-child {
+	border-bottom: none;
+}
+
+.cms-dashboard-section ul li a {
+	text-decoration: none;
+	color: #2271b1;
+	font-weight: 500;
+}
+
+.cms-dashboard-section ul li a:hover {
+	color: #135e96;
+}
+
+/* Help Box */
+.cms-help-box {
+	background: #f0f6fc;
+	padding: 20px;
+	border-left: 4px solid #0073aa;
+}
+
+.cms-help-box h3 {
+	margin-top: 15px;
+	color: #1d2327;
+}
+
+.cms-help-box h3:first-child {
+	margin-top: 0;
+}
+
+.cms-help-box ul,
+.cms-help-box ol {
+	margin-left: 20px;
+}
+
+.cms-help-box li {
+	margin-bottom: 8px;
+}
+
+/* Responsive */
+@media (max-width: 782px) {
+	.cms-dashboard-stats,
+	.cms-service-level-stats {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* Custom Column Widths */
+.column-service_level {
+	width: 12%;
+}
+
+.column-ministry {
+	width: 15%;
+}
+
+.column-ministry_rep {
+	width: 15%;
+}
+
+.column-event_date {
+	width: 12%;
+}
+
+.column-status {
+	width: 12%;
+}
+
+/* Loading Spinner */
+.cms-loading {
+	display: inline-block;
+	width: 16px;
+	height: 16px;
+	border: 2px solid #f3f3f3;
+	border-top: 2px solid #0073aa;
+	border-radius: 50%;
+	animation: cms-spin 1s linear infinite;
+}
+
+@keyframes cms-spin {
+	0% { transform: rotate(0deg); }
+	100% { transform: rotate(360deg); }
+}
+
+/* Notice Styles */
+.cms-notice {
+	padding: 12px;
+	margin: 15px 0;
+	border-left: 4px solid #0073aa;
+	background: #f0f6fc;
+}
+
+.cms-notice.cms-notice-success {
+	border-left-color: #00a32a;
+	background: #f0f6f0;
+}
+
+.cms-notice.cms-notice-error {
+	border-left-color: #d63638;
+	background: #fcf0f0;
+}
+
+.cms-notice.cms-notice-warning {
+	border-left-color: #dba617;
+	background: #fcf9f0;
+}
+
+/* Status Buttons */
+#cms-status-buttons {
+	padding-top: 10px;
+	border-top: 1px solid #f0f0f0;
+}
+
+#cms-status-buttons p {
+	margin-bottom: 10px;
+}
+
+.cms-status-btn {
+	margin: 3px 0;
+	display: block;
+	width: 100%;
+	text-align: center;
+}
