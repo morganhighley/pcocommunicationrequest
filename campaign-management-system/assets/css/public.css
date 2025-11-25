@@ -472,8 +472,11 @@
 }
 
 /* Custom Comment Form */
-.cms-comments-wrapper {
-	margin-top: 30px;
+/* Enhanced Comment Form Styles with Higher Specificity */
+#cms-brief-view .cms-comments-wrapper,
+.cms-brief-container .cms-comments-wrapper {
+	margin-top: 30px !important;
+	padding: 0 !important;
 }
 
 .cms-comments-title {
@@ -539,21 +542,23 @@
 	font-size: 15px;
 }
 
-.cms-comment-form-wrapper {
-	margin-top: 40px;
-	padding: 35px;
-	background: #fff;
-	border: 2px solid #0073aa;
-	border-radius: 8px;
-	box-shadow: 0 2px 8px rgba(0, 115, 170, 0.1);
+#cms-brief-view .cms-comment-form-wrapper,
+.cms-brief-container .cms-comment-form-wrapper {
+	margin-top: 40px !important;
+	padding: 35px !important;
+	background: #fff !important;
+	border: 2px solid #0073aa !important;
+	border-radius: 8px !important;
+	box-shadow: 0 2px 8px rgba(0, 115, 170, 0.1) !important;
 }
 
-.cms-comment-form-wrapper h3 {
-	margin-top: 0;
-	margin-bottom: 10px;
-	color: #0073aa;
-	font-size: 22px;
-	font-weight: 700;
+#cms-brief-view .cms-comment-form-wrapper h3,
+.cms-brief-container .cms-comment-form-wrapper h3 {
+	margin-top: 0 !important;
+	margin-bottom: 10px !important;
+	color: #0073aa !important;
+	font-size: 22px !important;
+	font-weight: 700 !important;
 }
 
 .cms-comment-notes {
@@ -563,61 +568,91 @@
 	line-height: 1.5;
 }
 
-.cms-comment-form {
-	display: grid;
-	gap: 20px;
+/* Reset any theme form styles */
+#cms-brief-view .cms-comment-form,
+.cms-brief-container .cms-comment-form {
+	display: block !important;
+	width: 100% !important;
 }
 
-.cms-form-field {
-	margin-bottom: 0;
+#cms-brief-view .cms-comment-form p,
+.cms-brief-container .cms-comment-form p {
+	margin: 0 0 20px 0 !important;
 }
 
-.cms-form-field label {
-	display: block;
-	font-weight: 600;
-	margin-bottom: 10px;
-	color: #333;
-	font-size: 15px;
+#cms-brief-view .cms-form-field,
+.cms-brief-container .cms-form-field {
+	margin-bottom: 20px !important;
+	display: block !important;
+	width: 100% !important;
 }
 
-.cms-form-field input[type="text"],
-.cms-form-field input[type="email"],
-.cms-form-field textarea {
-	width: 100%;
-	padding: 14px 16px;
-	border: 2px solid #ddd;
-	border-radius: 6px;
-	font-size: 15px;
-	font-family: inherit;
-	transition: all 0.3s ease;
-	box-sizing: border-box;
-	background-color: #fff;
-	line-height: 1.5;
+#cms-brief-view .cms-form-field label,
+.cms-brief-container .cms-form-field label {
+	display: block !important;
+	font-weight: 600 !important;
+	margin-bottom: 8px !important;
+	color: #333 !important;
+	font-size: 15px !important;
 }
 
-.cms-form-field input:focus,
-.cms-form-field textarea:focus {
-	outline: none;
-	border-color: #0073aa;
-	box-shadow: 0 0 0 3px rgba(0, 115, 170, 0.1);
+#cms-brief-view .cms-form-field input[type="text"],
+#cms-brief-view .cms-form-field input[type="email"],
+#cms-brief-view .cms-form-field textarea,
+.cms-brief-container .cms-form-field input[type="text"],
+.cms-brief-container .cms-form-field input[type="email"],
+.cms-brief-container .cms-form-field textarea {
+	width: 100% !important;
+	max-width: 100% !important;
+	padding: 14px 16px !important;
+	border: 2px solid #ddd !important;
+	border-radius: 6px !important;
+	font-size: 15px !important;
+	font-family: inherit !important;
+	box-sizing: border-box !important;
+	background-color: #fff !important;
+	line-height: 1.5 !important;
+	display: block !important;
 }
 
-.cms-form-field textarea {
-	min-height: 140px;
-	resize: vertical;
+#cms-brief-view .cms-form-field input[type="text"]:focus,
+#cms-brief-view .cms-form-field input[type="email"]:focus,
+#cms-brief-view .cms-form-field textarea:focus,
+.cms-brief-container .cms-form-field input[type="text"]:focus,
+.cms-brief-container .cms-form-field input[type="email"]:focus,
+.cms-brief-container .cms-form-field textarea:focus {
+	outline: none !important;
+	border-color: #0073aa !important;
+	box-shadow: 0 0 0 3px rgba(0, 115, 170, 0.1) !important;
 }
 
-.cms-form-actions {
-	margin-top: 10px;
-	display: flex;
-	align-items: center;
-	gap: 15px;
+#cms-brief-view .cms-form-field textarea,
+.cms-brief-container .cms-form-field textarea {
+	min-height: 150px !important;
+	resize: vertical !important;
 }
 
-.cms-button.cms-button-primary {
-	padding: 14px 32px;
-	font-size: 16px;
-	font-weight: 600;
+#cms-brief-view .cms-form-actions,
+.cms-brief-container .cms-form-actions {
+	margin-top: 20px !important;
+}
+
+#cms-brief-view .cms-button.cms-button-primary,
+.cms-brief-container .cms-button.cms-button-primary {
+	display: inline-block !important;
+	padding: 14px 32px !important;
+	font-size: 16px !important;
+	font-weight: 600 !important;
+	background: #0073aa !important;
+	color: #fff !important;
+	border: none !important;
+	border-radius: 4px !important;
+	cursor: pointer !important;
+}
+
+#cms-brief-view .cms-button.cms-button-primary:hover,
+.cms-brief-container .cms-button.cms-button-primary:hover {
+	background: #005a87 !important;
 }
 
 .cms-comments-closed {

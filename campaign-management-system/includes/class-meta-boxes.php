@@ -102,6 +102,16 @@ class CMS_Meta_Boxes {
 			'side',
 			'high'
 		);
+
+		// Comments meta box.
+		add_meta_box(
+			'cms_brief_comments',
+			__( 'Brief Comments & Feedback', 'campaign-mgmt' ),
+			array( $this, 'render_comments_meta_box' ),
+			'campaign_brief',
+			'normal',
+			'default'
+		);
 	}
 
 	/**
@@ -505,6 +515,61 @@ class CMS_Meta_Boxes {
 			<p class="description"><?php esc_html_e( 'Anyone with this link can view the brief. Comments require a name/email.', 'campaign-mgmt' ); ?></p>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Render comments meta box
+	 *
+	 * @param WP_Post $post Current post object.
+	 */
+	public function render_comments_meta_box( $post ) {
+		$comments = get_comments( array(
+			'post_id' => $post->ID,
+			'status'  => 'approve',
+			'orderby' => 'comment_date',
+			'order'   => 'DESC',
+		));
+
+		if ( empty( $comments ) ) {
+			echo '<p>' . esc_html__( 'No comments yet.', 'campaign-mgmt' ) . '</p>';
+			echo '<p><a href="' . esc_url( get_permalink( $post->ID ) . '#comments' ) . '" target="_blank" class="button button-secondary">' . esc_html__( 'View Brief & Add Comment', 'campaign-mgmt' ) . '</a></p>';
+			return;
+		}
+
+		echo '<div class="cms-admin-comments">';
+		echo '<p><strong>' . sprintf( _n( '%s Comment', '%s Comments', count( $comments ), 'campaign-mgmt' ), count( $comments ) ) . '</strong></p>';
+
+		foreach ( $comments as $comment ) {
+			?>
+			<div class="cms-admin-comment" style="background: #f9f9f9; padding: 15px; margin-bottom: 15px; border-left: 4px solid #0073aa;">
+				<div class="comment-meta" style="margin-bottom: 10px;">
+					<strong><?php echo esc_html( $comment->comment_author ); ?></strong>
+					<span style="color: #666; margin-left: 10px;">
+						(<?php echo esc_html( $comment->comment_author_email ); ?>)
+					</span>
+					<br>
+					<small style="color: #999;">
+						<?php echo esc_html( human_time_diff( strtotime( $comment->comment_date ), current_time( 'timestamp' ) ) . ' ago' ); ?>
+						(<?php echo esc_html( date( 'F j, Y \a\t g:i a', strtotime( $comment->comment_date ) ) ); ?>)
+					</small>
+				</div>
+				<div class="comment-content">
+					<?php echo wp_kses_post( wpautop( $comment->comment_content ) ); ?>
+				</div>
+				<div class="comment-actions" style="margin-top: 10px;">
+					<a href="<?php echo esc_url( admin_url( 'comment.php?action=editcomment&c=' . $comment->comment_ID ) ); ?>" class="button button-small">
+						<?php esc_html_e( 'Edit', 'campaign-mgmt' ); ?>
+					</a>
+					<a href="<?php echo esc_url( get_permalink( $post->ID ) . '#comment-' . $comment->comment_ID ); ?>" class="button button-small" target="_blank">
+						<?php esc_html_e( 'View on Brief', 'campaign-mgmt' ); ?>
+					</a>
+				</div>
+			</div>
+			<?php
+		}
+
+		echo '<p><a href="' . esc_url( get_permalink( $post->ID ) . '#comments' ) . '" target="_blank" class="button button-primary">' . esc_html__( 'View All Comments on Brief', 'campaign-mgmt' ) . '</a></p>';
+		echo '</div>';
 	}
 
 	/**

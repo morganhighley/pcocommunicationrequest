@@ -55,18 +55,18 @@ if ( 'campaign_brief' !== get_post_type() || ! ( comments_open() || get_comments
 
 			<form id="cms-comment-form" class="cms-comment-form" method="post">
 				<div class="cms-form-field">
-					<label for="cms_comment_author"><?php esc_html_e( 'Your Name *', 'campaign-mgmt' ); ?></label>
+					<label for="cms_comment_author"><?php esc_html_e( 'Your Name', 'campaign-mgmt' ); ?> <span class="required">*</span></label>
 					<input type="text" id="cms_comment_author" name="author" required maxlength="245" />
 				</div>
 
 				<div class="cms-form-field">
-					<label for="cms_comment_email"><?php esc_html_e( 'Your Email *', 'campaign-mgmt' ); ?></label>
+					<label for="cms_comment_email"><?php esc_html_e( 'Your Email', 'campaign-mgmt' ); ?> <span class="required">*</span></label>
 					<input type="email" id="cms_comment_email" name="email" required maxlength="100" />
 				</div>
 
 				<div class="cms-form-field">
-					<label for="cms_comment_content"><?php esc_html_e( 'Your Comment *', 'campaign-mgmt' ); ?></label>
-					<textarea id="cms_comment_content" name="comment" rows="6" required maxlength="65525"></textarea>
+					<label for="cms_comment_content"><?php esc_html_e( 'Your Comment', 'campaign-mgmt' ); ?> <span class="required">*</span></label>
+					<textarea id="cms_comment_content" name="comment" rows="8" required maxlength="65525"></textarea>
 				</div>
 
 				<input type="hidden" name="comment_post_ID" value="<?php echo esc_attr( get_the_ID() ); ?>" />
