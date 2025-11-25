@@ -1,120 +1,133 @@
 <?php
 /**
- * Custom Comments Template for Campaign Briefs
+ * Chat-Style Feedback Template for Campaign Briefs
  *
  * @package CampaignManagementSystem
  */
 
 // Exit if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
-	exit;
+    exit;
 }
 
-// Don't load if not a campaign brief or comments are closed.
-if ( 'campaign_brief' !== get_post_type() || ! ( comments_open() || get_comments_number() ) ) {
-	return;
+// Don't load if not a campaign brief
+if ( 'campaign_brief' !== get_post_type() ) {
+    return;
 }
+
+// Get existing comments for this brief
+$comments = get_comments( array(
+    'post_id' => get_the_ID(),
+    'status'  => 'approve',
+    'orderby' => 'comment_date',
+    'order'   => 'ASC', // Oldest first, like a chat
+));
+
+$comment_count = count( $comments );
 ?>
 
-<div id="comments" class="cms-comments-wrapper">
-	<?php if ( have_comments() ) : ?>
-		<h3 class="cms-comments-title">
-			<?php
-			$comment_count = get_comments_number();
-			printf(
-				_n( '%s Comment', '%s Comments', $comment_count, 'campaign-mgmt' ),
-				number_format_i18n( $comment_count )
-			);
-			?>
-		</h3>
+<div id="cms-chat" class="cms-chat-wrapper">
+    <div class="cms-chat-header">
+        <h3 class="cms-chat-title">
+            <span class="cms-chat-icon">💬</span>
+            <?php esc_html_e( 'Feedback & Discussion', 'campaign-mgmt' ); ?>
+            <?php if ( $comment_count > 0 ) : ?>
+                <span class="cms-chat-count"><?php echo esc_html( $comment_count ); ?></span>
+            <?php endif; ?>
+        </h3>
+        <p class="cms-chat-subtitle">
+            <?php esc_html_e( 'Use this space to discuss the campaign brief with the communications team.', 'campaign-mgmt' ); ?>
+        </p>
+    </div>
 
-		<ol class="cms-comment-list">
-			<?php
-			wp_list_comments(
-				array(
-					'style'       => 'ol',
-					'short_ping'  => true,
-					'avatar_size' => 50,
-					'callback'    => 'cms_custom_comment_display',
-				)
-			);
-			?>
-		</ol>
+    <!-- Chat Messages Container -->
+    <div class="cms-chat-messages" id="cms-chat-messages">
+        <?php if ( empty( $comments ) ) : ?>
+            <div class="cms-chat-empty">
+                <div class="cms-chat-empty-icon">💭</div>
+                <p><?php esc_html_e( 'No messages yet. Start the conversation!', 'campaign-mgmt' ); ?></p>
+            </div>
+        <?php else : ?>
+            <?php foreach ( $comments as $comment ) : ?>
+                <div class="cms-chat-message" id="comment-<?php echo esc_attr( $comment->comment_ID ); ?>">
+                    <div class="cms-chat-avatar">
+                        <?php echo get_avatar( $comment->comment_author_email, 40 ); ?>
+                    </div>
+                    <div class="cms-chat-bubble">
+                        <div class="cms-chat-meta">
+                            <span class="cms-chat-author"><?php echo esc_html( $comment->comment_author ); ?></span>
+                            <span class="cms-chat-time" title="<?php echo esc_attr( date( 'F j, Y \a\t g:i a', strtotime( $comment->comment_date ) ) ); ?>">
+                                <?php echo esc_html( human_time_diff( strtotime( $comment->comment_date ), current_time( 'timestamp' ) ) ); ?> ago
+                            </span>
+                        </div>
+                        <div class="cms-chat-content">
+                            <?php echo wp_kses_post( wpautop( $comment->comment_content ) ); ?>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
+    </div>
 
-		<?php
-		the_comments_navigation();
-		?>
-	<?php endif; ?>
+    <!-- Success/Error Messages -->
+    <div id="cms-chat-response" class="cms-chat-response" style="display: none;"></div>
 
-	<?php if ( comments_open() ) : ?>
-		<div class="cms-comment-form-wrapper">
-			<h3><?php esc_html_e( 'Leave Your Feedback', 'campaign-mgmt' ); ?></h3>
-			<p class="cms-comment-notes">
-				<?php esc_html_e( 'Your email address will not be published. All fields are required.', 'campaign-mgmt' ); ?>
-			</p>
+    <!-- Chat Input Form -->
+    <?php if ( comments_open() ) : ?>
+        <div class="cms-chat-input-wrapper">
+            <form id="cms-chat-form" class="cms-chat-form">
+                <div class="cms-chat-input-row">
+                    <div class="cms-chat-input-field cms-chat-input-name">
+                        <label for="cms_chat_author" class="screen-reader-text"><?php esc_html_e( 'Your Name', 'campaign-mgmt' ); ?></label>
+                        <input
+                            type="text"
+                            id="cms_chat_author"
+                            name="author"
+                            placeholder="<?php esc_attr_e( 'Your Name *', 'campaign-mgmt' ); ?>"
+                            required
+                            maxlength="245"
+                        />
+                    </div>
+                    <div class="cms-chat-input-field cms-chat-input-email">
+                        <label for="cms_chat_email" class="screen-reader-text"><?php esc_html_e( 'Your Email', 'campaign-mgmt' ); ?></label>
+                        <input
+                            type="email"
+                            id="cms_chat_email"
+                            name="email"
+                            placeholder="<?php esc_attr_e( 'Your Email *', 'campaign-mgmt' ); ?>"
+                            required
+                            maxlength="100"
+                        />
+                    </div>
+                </div>
+                <div class="cms-chat-input-row cms-chat-message-row">
+                    <div class="cms-chat-input-field cms-chat-input-message">
+                        <label for="cms_chat_content" class="screen-reader-text"><?php esc_html_e( 'Your Message', 'campaign-mgmt' ); ?></label>
+                        <textarea
+                            id="cms_chat_content"
+                            name="comment"
+                            placeholder="<?php esc_attr_e( 'Type your message...', 'campaign-mgmt' ); ?>"
+                            required
+                            maxlength="65525"
+                            rows="3"
+                        ></textarea>
+                    </div>
+                    <button type="submit" class="cms-chat-send-btn" id="cms-chat-submit" title="<?php esc_attr_e( 'Send Message', 'campaign-mgmt' ); ?>">
+                        <span class="cms-chat-send-icon">➤</span>
+                        <span class="cms-chat-send-text"><?php esc_html_e( 'Send', 'campaign-mgmt' ); ?></span>
+                    </button>
+                </div>
 
-			<form id="cms-comment-form" class="cms-comment-form" method="post">
-				<div class="cms-form-field">
-					<label for="cms_comment_author"><?php esc_html_e( 'Your Name', 'campaign-mgmt' ); ?> <span class="required">*</span></label>
-					<input type="text" id="cms_comment_author" name="author" required maxlength="245" />
-				</div>
-
-				<div class="cms-form-field">
-					<label for="cms_comment_email"><?php esc_html_e( 'Your Email', 'campaign-mgmt' ); ?> <span class="required">*</span></label>
-					<input type="email" id="cms_comment_email" name="email" required maxlength="100" />
-				</div>
-
-				<div class="cms-form-field">
-					<label for="cms_comment_content"><?php esc_html_e( 'Your Comment', 'campaign-mgmt' ); ?> <span class="required">*</span></label>
-					<textarea id="cms_comment_content" name="comment" rows="8" required maxlength="65525"></textarea>
-				</div>
-
-				<input type="hidden" name="comment_post_ID" value="<?php echo esc_attr( get_the_ID() ); ?>" />
-				<?php wp_nonce_field( 'cms_submit_comment', 'cms_comment_nonce' ); ?>
-
-				<div class="cms-form-actions">
-					<button type="submit" class="cms-button cms-button-primary" id="cms-submit-comment">
-						<?php esc_html_e( 'Submit Comment', 'campaign-mgmt' ); ?>
-					</button>
-				</div>
-
-				<div id="cms-comment-response" style="display:none;"></div>
-			</form>
-		</div>
-	<?php else : ?>
-		<p class="cms-comments-closed"><?php esc_html_e( 'Comments are closed.', 'campaign-mgmt' ); ?></p>
-	<?php endif; ?>
+                <input type="hidden" name="comment_post_ID" value="<?php echo esc_attr( get_the_ID() ); ?>" />
+                <?php wp_nonce_field( 'cms_submit_comment', 'cms_comment_nonce' ); ?>
+            </form>
+            <p class="cms-chat-privacy">
+                <?php esc_html_e( 'Your email will not be published. Messages are visible to the communications team.', 'campaign-mgmt' ); ?>
+            </p>
+        </div>
+    <?php else : ?>
+        <div class="cms-chat-closed">
+            <p><?php esc_html_e( 'Discussion is closed for this brief.', 'campaign-mgmt' ); ?></p>
+        </div>
+    <?php endif; ?>
 </div>
-
-<?php
-/**
- * Custom comment display callback
- *
- * @param WP_Comment $comment Comment object.
- * @param array      $args    Comment arguments.
- * @param int        $depth   Comment depth.
- */
-function cms_custom_comment_display( $comment, $args, $depth ) {
-	?>
-	<li <?php comment_class(); ?> id="comment-<?php comment_ID(); ?>">
-		<article class="cms-comment-body">
-			<div class="cms-comment-author">
-				<?php echo get_avatar( $comment, 50 ); ?>
-				<div class="cms-comment-meta">
-					<strong><?php echo get_comment_author_link( $comment ); ?></strong>
-					<time datetime="<?php comment_time( 'c' ); ?>">
-						<?php
-						printf(
-							__( '%s ago', 'campaign-mgmt' ),
-							human_time_diff( get_comment_time( 'U' ), current_time( 'timestamp' ) )
-						);
-						?>
-					</time>
-				</div>
-			</div>
-			<div class="cms-comment-content">
-				<?php comment_text(); ?>
-			</div>
-		</article>
-	<?php
-}
