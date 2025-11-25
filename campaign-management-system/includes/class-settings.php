@@ -21,6 +21,7 @@ class CMS_Settings {
 	public function __construct() {
 		add_action( 'admin_menu', array( $this, 'add_settings_page' ) );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
+		add_action( 'wp_ajax_cms_test_pc_connection', array( $this, 'test_pc_connection' ) );
 	}
 
 	/**
@@ -208,6 +209,44 @@ class CMS_Settings {
 		?>
 		<input type="password" name="cms_pc_secret" value="<?php echo esc_attr( $value ); ?>" class="regular-text" placeholder="••••••••••••••••" />
 		<p class="description"><?php esc_html_e( 'Secret from Planning Center (shown after creating Personal Access Token - keep this secure!)', 'campaign-mgmt' ); ?></p>
+		<p style="margin-top: 15px;">
+			<button type="button" id="cms-test-pc-connection" class="button button-secondary">
+				<?php esc_html_e( 'Test Connection', 'campaign-mgmt' ); ?>
+			</button>
+			<span id="cms-pc-test-result" style="margin-left: 10px;"></span>
+		</p>
+		<script type="text/javascript">
+		jQuery(document).ready(function($) {
+			$('#cms-test-pc-connection').on('click', function() {
+				var button = $(this);
+				var resultSpan = $('#cms-pc-test-result');
+
+				button.prop('disabled', true).text('<?php esc_html_e( 'Testing...', 'campaign-mgmt' ); ?>');
+				resultSpan.html('');
+
+				$.ajax({
+					url: ajaxurl,
+					type: 'POST',
+					data: {
+						action: 'cms_test_pc_connection',
+						nonce: '<?php echo wp_create_nonce( 'cms-admin' ); ?>'
+					},
+					success: function(response) {
+						button.prop('disabled', false).text('<?php esc_html_e( 'Test Connection', 'campaign-mgmt' ); ?>');
+						if (response.success) {
+							resultSpan.html('<span style="color: green;">✓ ' + response.data.message + '</span>');
+						} else {
+							resultSpan.html('<span style="color: red;">✗ ' + response.data.message + '</span>');
+						}
+					},
+					error: function() {
+						button.prop('disabled', false).text('<?php esc_html_e( 'Test Connection', 'campaign-mgmt' ); ?>');
+						resultSpan.html('<span style="color: red;">✗ <?php esc_html_e( 'Connection test failed', 'campaign-mgmt' ); ?></span>');
+					}
+				});
+			});
+		});
+		</script>
 		<?php
 	}
 
@@ -242,5 +281,37 @@ class CMS_Settings {
 			<?php esc_html_e( 'Send email notification when brief status changes', 'campaign-mgmt' ); ?>
 		</label>
 		<?php
+	}
+
+	/**
+	 * Test Planning Center connection via AJAX
+	 */
+	public function test_pc_connection() {
+		check_ajax_referer( 'cms-admin', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied', 'campaign-mgmt' ) ) );
+		}
+
+		require_once CMS_PLUGIN_DIR . 'includes/class-api-planning-center.php';
+		$api = new CMS_API_Planning_Center();
+		$result = $api->test_connection();
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error(
+				array(
+					'message' => sprintf(
+						__( 'Connection failed: %s', 'campaign-mgmt' ),
+						$result->get_error_message()
+					),
+				)
+			);
+		}
+
+		wp_send_json_success(
+			array(
+				'message' => __( 'Connection successful! Planning Center API is configured correctly.', 'campaign-mgmt' ),
+			)
+		);
 	}
 }

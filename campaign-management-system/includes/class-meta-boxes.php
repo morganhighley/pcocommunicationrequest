@@ -29,6 +29,10 @@ class CMS_Meta_Boxes {
 	 * Add meta boxes
 	 */
 	public function add_meta_boxes() {
+		// Remove default taxonomy metabox (we have our own custom one).
+		remove_meta_box( 'service_leveldiv', 'campaign_brief', 'side' );
+		remove_meta_box( 'tagsdiv-service_level', 'campaign_brief', 'side' );
+
 		// Page 1: Campaign Brief (Top Sheet).
 		add_meta_box(
 			'cms_campaign_info',
@@ -92,7 +96,7 @@ class CMS_Meta_Boxes {
 		// Service Level selector.
 		add_meta_box(
 			'cms_service_level',
-			__( 'Service Designation', 'campaign-mgmt' ),
+			__( 'Service Level', 'campaign-mgmt' ),
 			array( $this, 'render_service_level' ),
 			'campaign_brief',
 			'side',
@@ -116,6 +120,8 @@ class CMS_Meta_Boxes {
 		$campaign_tagline = get_post_meta( $post->ID, '_cms_campaign_tagline', true );
 		$campaign_slug = get_post_meta( $post->ID, '_cms_campaign_slug', true );
 		$event_dates = get_post_meta( $post->ID, '_cms_event_dates', true );
+		$event_start_datetime = get_post_meta( $post->ID, '_cms_event_start_datetime', true );
+		$event_end_datetime = get_post_meta( $post->ID, '_cms_event_end_datetime', true );
 		$promotion_dates = get_post_meta( $post->ID, '_cms_promotion_dates', true );
 		$file_path = get_post_meta( $post->ID, '_cms_file_path', true );
 		$livestream_location = get_post_meta( $post->ID, '_cms_livestream_location', true );
@@ -162,9 +168,14 @@ class CMS_Meta_Boxes {
 			</div>
 
 			<div class="cms-field">
-				<label for="cms_event_dates"><?php esc_html_e( 'Date(s) of event', 'campaign-mgmt' ); ?></label>
-				<input type="text" id="cms_event_dates" name="cms_event_dates" value="<?php echo esc_attr( $event_dates ); ?>" class="widefat" placeholder="e.g., March 15-17, 2025 or June 10, 2025" />
-				<p class="description"><?php esc_html_e( 'Enter date range or single date (flexible format)', 'campaign-mgmt' ); ?></p>
+				<label for="cms_event_start_datetime"><?php esc_html_e( 'Event Start Date & Time', 'campaign-mgmt' ); ?></label>
+				<input type="datetime-local" id="cms_event_start_datetime" name="cms_event_start_datetime" value="<?php echo esc_attr( $event_start_datetime ); ?>" class="widefat" />
+			</div>
+
+			<div class="cms-field">
+				<label for="cms_event_end_datetime"><?php esc_html_e( 'Event End Date & Time', 'campaign-mgmt' ); ?></label>
+				<input type="datetime-local" id="cms_event_end_datetime" name="cms_event_end_datetime" value="<?php echo esc_attr( $event_end_datetime ); ?>" class="widefat" />
+				<p class="description"><?php esc_html_e( 'Select start and end dates/times for the event', 'campaign-mgmt' ); ?></p>
 			</div>
 
 			<div class="cms-field">
@@ -420,7 +431,7 @@ class CMS_Meta_Boxes {
 				<?php foreach ( $service_levels as $level ) : ?>
 					<label style="display: block; margin: 8px 0;">
 						<input type="radio"
-							name="tax_input[service_level][]"
+							name="tax_input[service_level]"
 							value="<?php echo esc_attr( $level->term_id ); ?>"
 							<?php checked( $current_level, $level->term_id ); ?>
 						/>
@@ -510,6 +521,8 @@ class CMS_Meta_Boxes {
 			'cms_campaign_tagline',
 			'cms_campaign_slug',
 			'cms_event_dates',
+			'cms_event_start_datetime',
+			'cms_event_end_datetime',
 			'cms_promotion_dates',
 			'cms_promotion_start_date',
 			'cms_promotion_end_date',
@@ -571,6 +584,12 @@ class CMS_Meta_Boxes {
 		if ( isset( $_POST['cms_is_locked'] ) ) {
 			update_post_meta( $post_id, '_cms_is_locked', absint( $_POST['cms_is_locked'] ) );
 		}
+
+		// Save service level taxonomy.
+		if ( isset( $_POST['tax_input']['service_level'] ) ) {
+			$term_id = absint( $_POST['tax_input']['service_level'] );
+			wp_set_object_terms( $post_id, $term_id, 'service_level', false );
+		}
 	}
 
 	/**
@@ -608,6 +627,8 @@ class CMS_Meta_Boxes {
 					$level = $terms[0]->name;
 					$color_class = 'cms-badge cms-badge-' . strtolower( $level );
 					echo '<span class="' . esc_attr( $color_class ) . '">' . esc_html( $level ) . '</span>';
+				} else {
+					echo '—';
 				}
 				break;
 
@@ -615,17 +636,26 @@ class CMS_Meta_Boxes {
 				$terms = get_the_terms( $post_id, 'ministry' );
 				if ( $terms && ! is_wp_error( $terms ) ) {
 					echo esc_html( $terms[0]->name );
+				} else {
+					echo '—';
 				}
 				break;
 
 			case 'ministry_rep':
 				$rep = get_post_meta( $post_id, '_cms_ministry_representative', true );
-				echo esc_html( $rep );
+				echo $rep ? esc_html( $rep ) : '—';
 				break;
 
 			case 'event_date':
-				$date = get_post_meta( $post_id, '_cms_event_dates', true );
-				echo esc_html( $date );
+				$event_start = get_post_meta( $post_id, '_cms_event_start_datetime', true );
+				$event_dates_old = get_post_meta( $post_id, '_cms_event_dates', true );
+				if ( $event_start ) {
+					echo esc_html( date( 'F j, Y', strtotime( $event_start ) ) );
+				} elseif ( $event_dates_old ) {
+					echo esc_html( $event_dates_old );
+				} else {
+					echo '—';
+				}
 				break;
 
 			case 'status':

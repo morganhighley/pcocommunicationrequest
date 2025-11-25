@@ -24,9 +24,22 @@ while ( have_posts() ) :
 	$campaign_tagline = get_post_meta( get_the_ID(), '_cms_campaign_tagline', true );
 	$campaign_slug = get_post_meta( get_the_ID(), '_cms_campaign_slug', true );
 	$event_dates = get_post_meta( get_the_ID(), '_cms_event_dates', true );
+	$event_start_datetime = get_post_meta( get_the_ID(), '_cms_event_start_datetime', true );
+	$event_end_datetime = get_post_meta( get_the_ID(), '_cms_event_end_datetime', true );
 	$promotion_dates = get_post_meta( get_the_ID(), '_cms_promotion_dates', true );
 	$promotion_start_date = get_post_meta( get_the_ID(), '_cms_promotion_start_date', true );
 	$promotion_end_date = get_post_meta( get_the_ID(), '_cms_promotion_end_date', true );
+
+	// Format event datetime for display
+	if ( $event_start_datetime && $event_end_datetime ) {
+		$event_dates_display = date( 'F j, Y \a\t g:i a', strtotime( $event_start_datetime ) ) . ' - ' . date( 'F j, Y \a\t g:i a', strtotime( $event_end_datetime ) );
+	} elseif ( $event_start_datetime ) {
+		$event_dates_display = date( 'F j, Y \a\t g:i a', strtotime( $event_start_datetime ) );
+	} elseif ( $event_dates ) {
+		$event_dates_display = $event_dates;
+	} else {
+		$event_dates_display = '';
+	}
 
 	// Format promotion dates for display
 	if ( $promotion_start_date && $promotion_end_date ) {
@@ -150,7 +163,7 @@ while ( have_posts() ) :
 			<table class="cms-info-table">
 				<tr>
 					<td class="cms-label"><?php esc_html_e( 'Date(s) of event', 'campaign-mgmt' ); ?></td>
-					<td class="cms-value"><?php echo esc_html( $event_dates ); ?></td>
+					<td class="cms-value"><?php echo esc_html( $event_dates_display ); ?></td>
 				</tr>
 				<tr>
 					<td class="cms-label"><?php esc_html_e( 'Dates for promotion', 'campaign-mgmt' ); ?></td>

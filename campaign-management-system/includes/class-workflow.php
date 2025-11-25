@@ -24,6 +24,8 @@ class CMS_Workflow {
 		add_action( 'wp_ajax_cms_unlock_brief', array( $this, 'unlock_brief' ) );
 		add_action( 'admin_footer-post.php', array( $this, 'add_quick_status_change' ) );
 		add_action( 'save_post_campaign_brief', array( $this, 'check_lock_status' ), 20, 2 );
+		add_filter( 'comment_form_default_fields', array( $this, 'remove_comment_website_field' ) );
+		add_filter( 'comment_form_defaults', array( $this, 'customize_comment_form' ) );
 	}
 
 	/**
@@ -188,5 +190,33 @@ class CMS_Workflow {
 				update_post_meta( $post_id, '_cms_is_locked', 0 );
 			}
 		}
+	}
+
+	/**
+	 * Remove website field from comment form
+	 *
+	 * @param array $fields Comment form fields.
+	 * @return array Modified fields.
+	 */
+	public function remove_comment_website_field( $fields ) {
+		if ( is_singular( 'campaign_brief' ) ) {
+			unset( $fields['url'] );
+		}
+		return $fields;
+	}
+
+	/**
+	 * Customize comment form for campaign briefs
+	 *
+	 * @param array $defaults Comment form defaults.
+	 * @return array Modified defaults.
+	 */
+	public function customize_comment_form( $defaults ) {
+		if ( is_singular( 'campaign_brief' ) ) {
+			$defaults['title_reply'] = __( 'Leave Your Feedback', 'campaign-mgmt' );
+			$defaults['comment_notes_before'] = '<p class="comment-notes">' . __( 'Your email address will not be published.', 'campaign-mgmt' ) . '</p>';
+			$defaults['label_submit'] = __( 'Submit Comment', 'campaign-mgmt' );
+		}
+		return $defaults;
 	}
 }
