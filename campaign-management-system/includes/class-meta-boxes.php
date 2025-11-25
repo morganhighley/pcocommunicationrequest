@@ -88,6 +88,16 @@ class CMS_Meta_Boxes {
 			'side',
 			'default'
 		);
+
+		// Service Level selector.
+		add_meta_box(
+			'cms_service_level',
+			__( 'Service Designation', 'campaign-mgmt' ),
+			array( $this, 'render_service_level' ),
+			'campaign_brief',
+			'side',
+			'high'
+		);
 	}
 
 	/**
@@ -153,14 +163,18 @@ class CMS_Meta_Boxes {
 
 			<div class="cms-field">
 				<label for="cms_event_dates"><?php esc_html_e( 'Date(s) of event', 'campaign-mgmt' ); ?></label>
-				<input type="text" id="cms_event_dates" name="cms_event_dates" value="<?php echo esc_attr( $event_dates ); ?>" class="widefat" />
-				<p class="description"><?php esc_html_e( 'e.g., March 15-17, 2025 or June 10, 2025', 'campaign-mgmt' ); ?></p>
+				<input type="text" id="cms_event_dates" name="cms_event_dates" value="<?php echo esc_attr( $event_dates ); ?>" class="widefat" placeholder="e.g., March 15-17, 2025 or June 10, 2025" />
+				<p class="description"><?php esc_html_e( 'Enter date range or single date (flexible format)', 'campaign-mgmt' ); ?></p>
 			</div>
 
 			<div class="cms-field">
-				<label for="cms_promotion_dates"><?php esc_html_e( 'Dates for promotion', 'campaign-mgmt' ); ?></label>
-				<input type="text" id="cms_promotion_dates" name="cms_promotion_dates" value="<?php echo esc_attr( $promotion_dates ); ?>" class="widefat" />
-				<p class="description"><?php esc_html_e( 'e.g., February 1 - March 14, 2025', 'campaign-mgmt' ); ?></p>
+				<label for="cms_promotion_start_date"><?php esc_html_e( 'Promotion start date', 'campaign-mgmt' ); ?></label>
+				<input type="date" id="cms_promotion_start_date" name="cms_promotion_start_date" value="<?php echo esc_attr( get_post_meta( $post->ID, '_cms_promotion_start_date', true ) ); ?>" class="widefat" />
+			</div>
+
+			<div class="cms-field">
+				<label for="cms_promotion_end_date"><?php esc_html_e( 'Promotion end date', 'campaign-mgmt' ); ?></label>
+				<input type="date" id="cms_promotion_end_date" name="cms_promotion_end_date" value="<?php echo esc_attr( get_post_meta( $post->ID, '_cms_promotion_end_date', true ) ); ?>" class="widefat" />
 			</div>
 
 			<div class="cms-field">
@@ -383,14 +397,67 @@ class CMS_Meta_Boxes {
 	}
 
 	/**
+	 * Render Service Level meta box
+	 *
+	 * @param WP_Post $post Current post object.
+	 */
+	public function render_service_level( $post ) {
+		$terms = get_the_terms( $post->ID, 'service_level' );
+		$current_level = $terms && ! is_wp_error( $terms ) ? $terms[0]->term_id : '';
+
+		$service_levels = get_terms(
+			array(
+				'taxonomy'   => 'service_level',
+				'hide_empty' => false,
+			)
+		);
+		?>
+
+		<div class="cms-service-level-selector">
+			<p><strong><?php esc_html_e( 'Select campaign service level:', 'campaign-mgmt' ); ?></strong></p>
+
+			<?php if ( ! empty( $service_levels ) && ! is_wp_error( $service_levels ) ) : ?>
+				<?php foreach ( $service_levels as $level ) : ?>
+					<label style="display: block; margin: 8px 0;">
+						<input type="radio"
+							name="tax_input[service_level][]"
+							value="<?php echo esc_attr( $level->term_id ); ?>"
+							<?php checked( $current_level, $level->term_id ); ?>
+						/>
+						<strong><?php echo esc_html( $level->name ); ?></strong>
+						<br>
+						<small style="margin-left: 20px; color: #646970;">
+							<?php
+							if ( 'Green' === $level->name ) {
+								esc_html_e( '8-week lead time • Basic creative package', 'campaign-mgmt' );
+							} elseif ( 'Blue' === $level->name ) {
+								esc_html_e( '10-week lead time • Includes web & photography', 'campaign-mgmt' );
+							} elseif ( 'Black' === $level->name ) {
+								esc_html_e( '12-week lead time • Full service with print & film', 'campaign-mgmt' );
+							}
+							?>
+						</small>
+					</label>
+				<?php endforeach; ?>
+			<?php else : ?>
+				<p class="description">
+					<?php esc_html_e( 'No service levels found. Please add them in Campaign Briefs → Service Levels.', 'campaign-mgmt' ); ?>
+				</p>
+			<?php endif; ?>
+		</div>
+		<?php
+	}
+
+	/**
 	 * Render Share meta box
 	 *
 	 * @param WP_Post $post Current post object.
 	 */
 	public function render_share( $post ) {
-		if ( 'publish' !== $post->post_status && 'pending_acceptance' !== $post->post_status && 'accepted' !== $post->post_status ) {
+		// Check if post has been saved (has an ID > 0)
+		if ( ! $post->ID || 0 === $post->ID ) {
 			?>
-			<p class="description"><?php esc_html_e( 'Save as Draft first to generate shareable link.', 'campaign-mgmt' ); ?></p>
+			<p class="description"><?php esc_html_e( 'Save draft first to generate shareable link.', 'campaign-mgmt' ); ?></p>
 			<?php
 			return;
 		}
@@ -444,6 +511,8 @@ class CMS_Meta_Boxes {
 			'cms_campaign_slug',
 			'cms_event_dates',
 			'cms_promotion_dates',
+			'cms_promotion_start_date',
+			'cms_promotion_end_date',
 			'cms_file_path',
 			'cms_livestream_location',
 		);

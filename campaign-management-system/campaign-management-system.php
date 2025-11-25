@@ -78,6 +78,7 @@ class Campaign_Management_System {
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_scripts' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'public_scripts' ) );
 		add_action( 'plugins_loaded', array( $this, 'load_plugin_textdomain' ) );
+		add_action( 'admin_notices', array( $this, 'activation_notice' ) );
 
 		// Activation and deactivation hooks.
 		register_activation_hook( __FILE__, array( $this, 'activate' ) );
@@ -187,18 +188,42 @@ class Campaign_Management_System {
 	}
 
 	/**
+	 * Show activation notice
+	 */
+	public function activation_notice() {
+		if ( get_transient( 'cms_flush_permalink_notice' ) ) {
+			?>
+			<div class="notice notice-info is-dismissible">
+				<p>
+					<strong><?php esc_html_e( 'Campaign Management System activated!', 'campaign-mgmt' ); ?></strong>
+					<?php esc_html_e( 'Please go to Settings → Permalinks and click "Save Changes" to flush the permalink cache. This ensures shareable brief links work correctly.', 'campaign-mgmt' ); ?>
+					<a href="<?php echo esc_url( admin_url( 'options-permalink.php' ) ); ?>" class="button button-primary" style="margin-left: 10px;">
+						<?php esc_html_e( 'Go to Permalinks', 'campaign-mgmt' ); ?>
+					</a>
+				</p>
+			</div>
+			<?php
+			delete_transient( 'cms_flush_permalink_notice' );
+		}
+	}
+
+	/**
 	 * Plugin activation
 	 */
 	public function activate() {
 		// Trigger init to register post type.
 		$this->init();
 
-		// Flush rewrite rules.
+		// Flush rewrite rules twice to ensure they take effect.
 		flush_rewrite_rules();
+		delete_option( 'rewrite_rules' );
 
 		// Set default options.
 		add_option( 'cms_version', CMS_VERSION );
 		add_option( 'cms_installed_date', current_time( 'mysql' ) );
+
+		// Add admin notice to manually flush permalinks.
+		set_transient( 'cms_flush_permalink_notice', true, 300 );
 	}
 
 	/**

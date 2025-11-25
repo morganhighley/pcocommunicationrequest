@@ -67,8 +67,16 @@ class CMS_Settings {
 		);
 
 		add_settings_field(
+			'cms_pc_token_description',
+			__( 'Token Description', 'campaign-mgmt' ),
+			array( $this, 'pc_token_description_callback' ),
+			'cms-settings',
+			'cms_api_section'
+		);
+
+		add_settings_field(
 			'cms_pc_app_id',
-			__( 'Application ID', 'campaign-mgmt' ),
+			__( 'Application ID (from token)', 'campaign-mgmt' ),
 			array( $this, 'pc_app_id_callback' ),
 			'cms-settings',
 			'cms_api_section'
@@ -76,12 +84,13 @@ class CMS_Settings {
 
 		add_settings_field(
 			'cms_pc_secret',
-			__( 'Secret', 'campaign-mgmt' ),
+			__( 'Secret (from token)', 'campaign-mgmt' ),
 			array( $this, 'pc_secret_callback' ),
 			'cms-settings',
 			'cms_api_section'
 		);
 
+		register_setting( 'cms_settings_group', 'cms_pc_token_description', 'sanitize_text_field' );
 		register_setting( 'cms_settings_group', 'cms_pc_app_id', 'sanitize_text_field' );
 		register_setting( 'cms_settings_group', 'cms_pc_secret', 'sanitize_text_field' );
 
@@ -153,8 +162,31 @@ class CMS_Settings {
 	 * API section callback
 	 */
 	public function api_section_callback() {
-		echo '<p>' . esc_html__( 'Connect to Planning Center to automatically import form submissions. Get your credentials from Planning Center → Personal Settings → Developer.', 'campaign-mgmt' ) . '</p>';
-		echo '<p><strong>' . esc_html__( 'Note: This feature will be available in Phase 2. For now, manually create briefs from form data.', 'campaign-mgmt' ) . '</strong></p>';
+		?>
+		<div style="background: #f0f6fc; border-left: 4px solid #0073aa; padding: 15px; margin: 15px 0;">
+			<h3 style="margin-top: 0;"><?php esc_html_e( 'Setup Instructions (Phase 2)', 'campaign-mgmt' ); ?></h3>
+			<ol>
+				<li><?php esc_html_e( 'Go to Planning Center → Personal Settings → Developer', 'campaign-mgmt' ); ?></li>
+				<li><?php esc_html_e( 'Click "New Personal Access Token"', 'campaign-mgmt' ); ?></li>
+				<li><?php esc_html_e( 'Enter a description (e.g., "Campaign Brief System")', 'campaign-mgmt' ); ?></li>
+				<li><?php esc_html_e( 'Select API versions (use defaults)', 'campaign-mgmt' ); ?></li>
+				<li><?php esc_html_e( 'Click Submit - you will receive an Application ID and Secret', 'campaign-mgmt' ); ?></li>
+				<li><?php esc_html_e( 'Copy those credentials and paste below', 'campaign-mgmt' ); ?></li>
+			</ol>
+			<p><strong><?php esc_html_e( 'Note: This feature is for Phase 2. For now, manually create briefs from form data.', 'campaign-mgmt' ); ?></strong></p>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Token description callback
+	 */
+	public function pc_token_description_callback() {
+		$value = get_option( 'cms_pc_token_description', '' );
+		?>
+		<input type="text" name="cms_pc_token_description" value="<?php echo esc_attr( $value ); ?>" class="regular-text" placeholder="e.g., Campaign Brief System" />
+		<p class="description"><?php esc_html_e( 'Same description you used when creating the token in Planning Center', 'campaign-mgmt' ); ?></p>
+		<?php
 	}
 
 	/**
@@ -163,8 +195,8 @@ class CMS_Settings {
 	public function pc_app_id_callback() {
 		$value = get_option( 'cms_pc_app_id', '' );
 		?>
-		<input type="text" name="cms_pc_app_id" value="<?php echo esc_attr( $value ); ?>" class="regular-text" />
-		<p class="description"><?php esc_html_e( 'Your Planning Center Application ID', 'campaign-mgmt' ); ?></p>
+		<input type="text" name="cms_pc_app_id" value="<?php echo esc_attr( $value ); ?>" class="regular-text" placeholder="e.g., 1234567890abcdef" />
+		<p class="description"><?php esc_html_e( 'Application ID from Planning Center (shown after creating Personal Access Token)', 'campaign-mgmt' ); ?></p>
 		<?php
 	}
 
@@ -174,8 +206,8 @@ class CMS_Settings {
 	public function pc_secret_callback() {
 		$value = get_option( 'cms_pc_secret', '' );
 		?>
-		<input type="password" name="cms_pc_secret" value="<?php echo esc_attr( $value ); ?>" class="regular-text" />
-		<p class="description"><?php esc_html_e( 'Your Planning Center Secret (keep this secure!)', 'campaign-mgmt' ); ?></p>
+		<input type="password" name="cms_pc_secret" value="<?php echo esc_attr( $value ); ?>" class="regular-text" placeholder="••••••••••••••••" />
+		<p class="description"><?php esc_html_e( 'Secret from Planning Center (shown after creating Personal Access Token - keep this secure!)', 'campaign-mgmt' ); ?></p>
 		<?php
 	}
 
