@@ -26,6 +26,8 @@ class CMS_Workflow {
 		add_action( 'save_post_campaign_brief', array( $this, 'check_lock_status' ), 20, 2 );
 		add_filter( 'comment_form_default_fields', array( $this, 'remove_comment_website_field' ) );
 		add_filter( 'comment_form_defaults', array( $this, 'customize_comment_form' ) );
+		add_filter( 'pre_comment_approved', array( $this, 'auto_approve_comments' ), 10, 2 );
+		add_filter( 'comment_post_redirect', array( $this, 'redirect_after_comment' ), 10, 2 );
 	}
 
 	/**
@@ -218,5 +220,39 @@ class CMS_Workflow {
 			$defaults['label_submit'] = __( 'Submit Comment', 'campaign-mgmt' );
 		}
 		return $defaults;
+	}
+
+	/**
+	 * Auto-approve comments on campaign briefs
+	 *
+	 * @param int|string|WP_Error $approved The approval status.
+	 * @param array               $commentdata Comment data.
+	 * @return int|string|WP_Error Modified approval status.
+	 */
+	public function auto_approve_comments( $approved, $commentdata ) {
+		if ( isset( $commentdata['comment_post_ID'] ) ) {
+			$post = get_post( $commentdata['comment_post_ID'] );
+			if ( $post && 'campaign_brief' === $post->post_type ) {
+				// Auto-approve comments on campaign briefs
+				return 1;
+			}
+		}
+		return $approved;
+	}
+
+	/**
+	 * Redirect after comment is posted
+	 *
+	 * @param string     $location The redirect location.
+	 * @param WP_Comment $comment The comment object.
+	 * @return string Modified redirect location.
+	 */
+	public function redirect_after_comment( $location, $comment ) {
+		$post = get_post( $comment->comment_post_ID );
+		if ( $post && 'campaign_brief' === $post->post_type ) {
+			// Redirect to the brief with a success message
+			$location = add_query_arg( 'comment_success', '1', get_permalink( $post->ID ) . '#comments' );
+		}
+		return $location;
 	}
 }

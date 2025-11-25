@@ -294,16 +294,21 @@
 }
 
 /* Custom Column Widths */
+.column-title {
+	width: 30%;
+}
+
 .column-service_level {
-	width: 12%;
+	width: 100px;
+	text-align: center;
 }
 
 .column-ministry {
-	width: 15%;
+	width: 12%;
 }
 
 .column-ministry_rep {
-	width: 15%;
+	width: 12%;
 }
 
 .column-event_date {
@@ -311,7 +316,11 @@
 }
 
 .column-status {
-	width: 12%;
+	width: 10%;
+}
+
+.column-date {
+	width: 10%;
 }
 
 /* Loading Spinner */
